@@ -4,10 +4,16 @@
   "framework": null,
   "buildCommand": null,
   "outputDirectory": "public",
-  "installCommand": "npm install && uv pip install --system -r requirements.txt",
+  "installCommand": "npm install && pip3 install -r requirements.txt",
   "functions": {
-    "api/**/*.js": { "maxDuration": 30 }
+    "api/**/*.js": { "maxDuration": 30 },
+    "api/**/*.py": { "maxDuration": 30, "runtime": "python3.12" }
   },
+  "builds": [
+    { "src": "api/**/*.py", "use": "@vercel/python" },
+    { "src": "api/**/*.js", "use": "@vercel/node" },
+    { "src": "public/**/*", "use": "@vercel/static" }
+  ],
   "headers": [
     {
       "source": "/api/(.*)",
