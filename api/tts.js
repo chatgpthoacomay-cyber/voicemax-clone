@@ -66,8 +66,9 @@ function buildSsml(text, voice, rate, pitch) {
 }
 
 function _synthesize(text, voice, rate, pitch) {
-  const connectionId = uuidv4();
-  const wsUrl = `wss://speech.platform.bing.com/connect?TrustedClientToken=&ConnectionId=${connectionId}`;
+  const connectionId = uuidv4().toUpperCase();
+  // TrustedClientToken từ edge-tts Python library
+  const wsUrl = `wss://speech.platform.bing.com/connect?TrustedClientToken=6A5AA1D4EAFF4E9FB37E23D68491D6F4&ConnectionId=${connectionId}`;
 
   return new Promise((resolve, reject) => {
     let audioChunks = [];
@@ -89,11 +90,12 @@ function _synthesize(text, voice, rate, pitch) {
     };
 
     try {
-      ws = new WebSocket(wsUrl, {
+      ws = new WebSocket(wsUrl, undefined, {
         headers: {
           'Pragma': 'no-cache',
           'Cache-Control': 'no-cache',
           'Origin': 'https://azure.microsoft.com',
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36 Edg/120.0.0.0',
         },
       });
     } catch (err) {
