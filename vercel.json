@@ -4,8 +4,7 @@
   "buildCommand": null,
   "installCommand": "npm install && uv pip install --system -r requirements.txt",
   "functions": {
-    "api/**/*.js": { "maxDuration": 30 },
-    "api/**/*.py": { "maxDuration": 30 }
+    "api/**/*.js": { "maxDuration": 30 }
   },
   "headers": [
     {
@@ -18,8 +17,7 @@
     }
   ],
   "rewrites": [
-    { "source": "/api/tts", "destination": "/api/tts.py" },
-    { "source": "/api/tts-with-timing", "destination": "/api/tts-with-timing.py" },
-    { "source": "/api/autochat/niches/:id", "destination": "/api/autochat/niches.js" }
+    { "source": "/api/autochat/niches/:id", "destination": "/api/autochat/niches.js" },
+    { "source": "/api/tts-with-timing", "destination": "/api/tts-with-timing.js" }
   ]
 }
