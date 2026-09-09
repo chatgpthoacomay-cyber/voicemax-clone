@@ -8,21 +8,9 @@ import asyncio
 import base64
 import traceback
 
-try:
-    import edge_tts
-except ImportError as e:
-    def handler(event, context):
-        return {
-            "statusCode": 500,
-            "headers": {
-                "Content-Type": "application/json",
-                "Access-Control-Allow-Origin": "*",
-            },
-            "body": json.dumps({"error": f"edge-tts not installed ({e})"}),
-        }
-
 
 async def _synthesize(text, voice, rate, pitch):
+    import edge_tts
     communicate = edge_tts.Communicate(text, voice, rate=rate, pitch=pitch)
     audio_bytes = bytearray()
     words = []
@@ -50,6 +38,16 @@ def handler(event, context):
     if method != "POST":
         headers["Content-Type"] = "application/json"
         return {"statusCode": 405, "headers": headers, "body": json.dumps({"error": "Method Not Allowed"})}
+
+    try:
+        import edge_tts
+    except ImportError as e:
+        headers["Content-Type"] = "application/json"
+        return {
+            "statusCode": 500,
+            "headers": headers,
+            "body": json.dumps({"error": f"edge-tts not installed ({e})"}),
+        }
 
     try:
         body_raw = event.get("body", "{}")
@@ -82,7 +80,7 @@ def handler(event, context):
         audio_bytes, words = asyncio.run(_synthesize(text, voice, rate, pitch))
         if not audio_bytes or len(audio_bytes) < 100:
             headers["Content-Type"] = "application/json"
-            return {"statusCode": 500, "headers": headers, "body": json.dumps({"error": "Không tạo được âm thanh (buffer quá nhỏ)."})}
+            return {"statusCode": 500, "headers": headers, "body": json.dumps({"error": "Không tạo được âm thanh (buffer quá nhỏ).")}}
         headers["Content-Type"] = "application/json"
         return {
             "statusCode": 200,
