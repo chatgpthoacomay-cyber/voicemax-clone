@@ -11,8 +11,8 @@ import traceback
 import sys
 
 
-def _synthesize_sync(text, voice, rate, pitch):
-    """Synchronous wrapper for edge-tts synthesis."""
+def _synthesize_sync(text, voice, rate, pitch, max_retries=3):
+    """Synchronous wrapper for edge-tts synthesis with retry."""
     async def _run():
         import edge_tts
         communicate = edge_tts.Communicate(text, voice, rate=rate, pitch=pitch)
@@ -20,16 +20,28 @@ def _synthesize_sync(text, voice, rate, pitch):
         async for chunk in communicate.stream():
             if chunk.get("type") == "audio":
                 audio_bytes.extend(chunk["data"])
+        if not audio_bytes:
+            raise Exception("No audio was received. Please verify that your parameters are correct.")
         return bytes(audio_bytes)
 
     # Vercel Python runtime may have a running event loop.
     # Always create a fresh loop to avoid asyncio.run() conflicts.
-    loop = asyncio.new_event_loop()
-    asyncio.set_event_loop(loop)
-    try:
-        return loop.run_until_complete(_run())
-    finally:
-        loop.close()
+    last_exc = None
+    for attempt in range(max_retries):
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
+        try:
+            return loop.run_until_complete(_run())
+        except Exception as e:
+            last_exc = e
+            if "No audio was received" in str(e) and attempt < max_retries - 1:
+                import time
+                time.sleep(1 * (attempt + 1))
+                continue
+            raise
+        finally:
+            loop.close()
+    raise last_exc  # Should not reach here
 
 
 def app(environ, start_response):
@@ -104,7 +116,7 @@ def app(environ, start_response):
         return [resp]
     except Exception as e:
         tb = traceback.format_exc()
-        resp = json.dumps({"error": f"{e}", "trace": tb[:500]}).encode()
+        resp = json.dumps({"error": f"{e}", "trace": tb[:2000]}).encode()
         headers["Content-Type"] = "application/json"
         start_response("500 Internal Server Error", [(k, v) for k, v in headers.items()])
         return [resp]
