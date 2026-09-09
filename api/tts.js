@@ -1,6 +1,18 @@
 import WebSocket from 'ws';
 import crypto from 'crypto';
 
+function uuidv4() {
+  // Fallback cho crypto.randomUUID() trên Node.js 18
+  try {
+    return crypto.randomUUID();
+  } catch (_) {
+    return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
+      const r = (Math.random() * 16) | 0;
+      return (c === 'x' ? r : (r & 0x3) | 0x8).toString(16);
+    });
+  }
+}
+
 export default async function handler(req, res) {
   if (req.method === 'OPTIONS') {
     return res.status(200).end();
@@ -40,7 +52,12 @@ export default async function handler(req, res) {
 }
 
 function buildSsml(text, voice, rate, pitch) {
-  const escaped = text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&apos;');
+  const escaped = text
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&apos;');
   return `<speak version="1.0" xmlns="http://www.w3.org/2001/10/synthesis" xmlns:mstts="https://www.w3.org/2001/mstts" xml:lang="en-US">
     <voice name="${voice}">
       <prosody rate="${rate}" pitch="${pitch}" volume="+0%">${escaped}</prosody>
@@ -49,7 +66,7 @@ function buildSsml(text, voice, rate, pitch) {
 }
 
 function _synthesize(text, voice, rate, pitch) {
-  const connectionId = crypto.randomUUID();
+  const connectionId = uuidv4();
   const wsUrl = `wss://speech.platform.bing.com/connect?TrustedClientToken=&ConnectionId=${connectionId}`;
 
   return new Promise((resolve, reject) => {
@@ -60,8 +77,12 @@ function _synthesize(text, voice, rate, pitch) {
     const done = (err, buf) => {
       if (settled) return;
       settled = true;
-      if (ws && ws.readyState === WebSocket.OPEN || ws.readyState === WebSocket.CONNECTING) {
-        try { ws.close(); } catch {}
+      if (ws) {
+        try {
+          if (ws.readyState === WebSocket.OPEN || ws.readyState === WebSocket.CONNECTING) {
+            ws.close();
+          }
+        } catch (_) {}
       }
       if (err) reject(err);
       else resolve(buf);
@@ -73,46 +94,40 @@ function _synthesize(text, voice, rate, pitch) {
           'Pragma': 'no-cache',
           'Cache-Control': 'no-cache',
           'Origin': 'https://azure.microsoft.com',
-        }
+        },
       });
     } catch (err) {
-      return done(err);
+      return done(new Error('Không thể tạo WebSocket: ' + (err.message || err)));
     }
 
     const wsTimeout = setTimeout(() => {
-      done(new Error('WebSocket timeout - Microsoft TTS không phản hồi'));
+      done(new Error('Microsoft TTS không phản hồi (timeout 8s)'));
     }, 8000);
 
     ws.on('open', () => {
-      // Gửi context
-      const contextMsg = JSON.stringify({
+      // Gửi speech.config
+      const configMsg = JSON.stringify({
         context: {
           synthesis: {
             audio: {
               metadataoptions: { sentenceBoundaryEnabled: false, wordBoundaryEnabled: false },
               outputFormat: 'audio-24khz-96kbitrate-mono-mp3',
-            }
-          }
-        }
+            },
+          },
+        },
       });
-      // Format: audio-24khz-96kbitrate-mono-mp3
-      const contextHeader = `Content-Type:application/json; charset=utf-8\r\nPath:speech.config\r\n\r\n`;
-      ws.send(contextHeader + contextMsg);
+      ws.send('Content-Type:application/json; charset=utf-8\r\nPath:speech.config\r\n\r\n' + configMsg);
 
       // Gửi SSML
       const ssml = buildSsml(text, voice, rate, pitch);
-      const ssmlHeader = `Content-Type:application/ssml+xml\r\nPath:ssml\r\n\r\n`;
-      ws.send(ssmlHeader + ssml);
+      ws.send('Content-Type:application/ssml+xml\r\nPath:ssml\r\n\r\n' + ssml);
 
-      // Gửi tín hiệu kết thúc
-      const endHeader = `Content-Type:application/x-microsoft-speech-session-end\r\nPath:turn.end\r\n\r\n`;
-      ws.send(endHeader);
+      // Gửi turn.end
+      ws.send('Content-Type:application/x-microsoft-speech-session-end\r\nPath:turn.end\r\n\r\n');
     });
 
     ws.on('message', (data) => {
       if (data instanceof Buffer || data instanceof Uint8Array) {
-        // Skip binary header (first 2 bytes are header length)
-        // Format: [Type(1)] [HeaderLen(1)] [HeaderData(N)] [AudioData]
         if (data.length > 2) {
           const headerLen = data[1];
           const audioData = data.slice(2 + headerLen);
@@ -124,20 +139,17 @@ function _synthesize(text, voice, rate, pitch) {
         const msg = data.toString();
         if (msg.includes('turn.end')) {
           clearTimeout(wsTimeout);
-          const final = Buffer.concat(audioChunks);
+          const final = audioChunks.length > 0 ? Buffer.concat(audioChunks) : Buffer.alloc(0);
           done(null, final);
         } else if (msg.includes('turn.start')) {
           // Bắt đầu nhận audio
-        } else if (msg.includes('error') || msg.includes('Error')) {
-          clearTimeout(wsTimeout);
-          done(new Error('Microsoft TTS error: ' + msg.slice(0, 200)));
         }
       }
     });
 
     ws.on('error', (err) => {
       clearTimeout(wsTimeout);
-      done(new Error('WebSocket error: ' + (err.message || err)));
+      done(new Error('WebSocket lỗi: ' + (err.message || err)));
     });
 
     ws.on('close', (code, reason) => {
@@ -147,7 +159,7 @@ function _synthesize(text, voice, rate, pitch) {
           const final = Buffer.concat(audioChunks);
           done(null, final);
         } else {
-          done(new Error('WebSocket đóng đột ngột (code=' + code + ')'));
+          done(new Error('WebSocket đóng đột ngột (code=' + code + ', reason=' + (reason || '').toString() + ')'));
         }
       }
     });
