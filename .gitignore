@@ -1,0 +1,9 @@
+node_modules/
+.vercel/
+.env
+.env.local
+.DS_Store
+*.log
+tts_helper.py
+__pycache__/
+*.pyc

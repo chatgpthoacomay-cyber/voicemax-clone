@@ -1,0 +1,25 @@
+{
+  "version": 2,
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "buildCommand": null,
+  "installCommand": "npm install && pip install -r requirements.txt",
+  "functions": {
+    "api/**/*.js": { "maxDuration": 30 },
+    "api/**/*.py": { "maxDuration": 30 }
+  },
+  "headers": [
+    {
+      "source": "/api/(.*)",
+      "headers": [
+        { "key": "Access-Control-Allow-Origin", "value": "*" },
+        { "key": "Access-Control-Allow-Methods", "value": "GET,POST,PUT,DELETE,OPTIONS" },
+        { "key": "Access-Control-Allow-Headers", "value": "Content-Type,Authorization" }
+      ]
+    }
+  ],
+  "rewrites": [
+    { "source": "/api/tts", "destination": "/api/tts.py" },
+    { "source": "/api/tts-with-timing", "destination": "/api/tts-with-timing.py" },
+    { "source": "/api/autochat/niches/:id", "destination": "/api/autochat/niches.js" }
+  ]
+}

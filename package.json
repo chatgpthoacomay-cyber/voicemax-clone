@@ -1,0 +1,16 @@
+{
+  "name": "voicemax-clone",
+  "version": "1.0.0",
+  "description": "VoiceMax - Text to Speech using Edge TTS Python (Vercel Deployable)",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "install-deps": "npm install && pip install -r requirements.txt",
+    "vercel-dev": "vercel dev",
+    "vercel-deploy": "vercel deploy --prod"
+  },
+  "dependencies": {
+    "cors": "^2.8.5",
+    "express": "^4.18.2"
+  }
+}

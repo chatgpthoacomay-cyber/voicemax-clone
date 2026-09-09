@@ -1,0 +1,1932 @@
+<!DOCTYPE html>
+<html lang="vi" class="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>VoiceMax Clone - Text to Speech</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  :root { --bg: #0a0f1a; --surface: #111827; --border: #1e293b; --text: #e2e8f0; --text-dim: #94a3b8; --primary: #3b82f6; --primary-dark: #1d4ed8; --success: #22c55e; --danger: #ef4444; --warning: #f59e0b; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
+  
+  .header { border-bottom: 1px solid var(--border); background: rgba(17,24,39,0.9); backdrop-filter: blur(12px); position: sticky; top: 0; z-index: 40; }
+  .header-inner { max-width: 1200px; margin: 0 auto; padding: 12px 20px; display: flex; align-items: center; gap: 12px; }
+  .logo { display: flex; align-items: center; gap: 8px; font-weight: 700; font-size: 18px; text-decoration: none; color: var(--text); }
+  .logo-icon { width: 32px; height: 32px; border-radius: 12px; background: linear-gradient(135deg, var(--primary), #8b5cf6); display: flex; align-items: center; justify-content: center; color: white; font-size: 16px; }
+  .nav-tabs { max-width: 1200px; margin: 0 auto; padding: 0 20px 12px; display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+  .nav-tab { position: relative; overflow: hidden; border-radius: 12px; border: 1px solid var(--border); padding: 10px 14px; text-align: left; cursor: pointer; transition: all 0.2s; background: rgba(30,41,59,0.3); color: var(--text-dim); }
+  .nav-tab:hover { border-color: rgba(59,130,246,0.25); background: rgba(30,41,59,0.6); }
+  .nav-tab.active { border-color: rgba(59,130,246,0.4); background: linear-gradient(135deg, rgba(59,130,246,0.1), rgba(139,92,246,0.1)); box-shadow: 0 1px 3px rgba(0,0,0,0.3); color: var(--text); }
+  .nav-tab.active .tab-icon { background: linear-gradient(135deg, var(--primary), #8b5cf6); color: white; }
+  .nav-tab .tab-bottom { position: absolute; bottom: 0; left: 0; right: 0; height: 2px; background: linear-gradient(90deg, var(--primary), #8b5cf6); opacity: 0; transition: opacity 0.2s; }
+  .nav-tab.active .tab-bottom { opacity: 1; }
+  .tab-content { display: flex; align-items: center; gap: 10px; }
+  .tab-icon { width: 36px; height: 36px; border-radius: 8px; display: flex; align-items: center; justify-content: center; background: var(--bg); color: var(--text-dim); font-size: 14px; transition: all 0.2s; }
+  .tab-info { min-width: 0; }
+  .tab-title { font-size: 13px; font-weight: 600; display: flex; align-items: center; gap: 6px; }
+  .tab-badge { font-size: 9px; padding: 1px 5px; border-radius: 4px; background: rgba(30,41,59,0.7); color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.5px; }
+  .tab-desc { font-size: 11px; color: var(--text-dim); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+  .container { max-width: 1200px; margin: 0 auto; padding: 20px; }
+  .page { display: none; }
+  .page.active { display: block; }
+
+  .card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 24px; }
+  .card-title { font-size: 14px; font-weight: 600; color: var(--text-dim); margin-bottom: 8px; }
+
+  .form-group { display: grid; grid-template-columns: 220px 1fr; gap: 12px; align-items: start; margin-bottom: 16px; }
+  .form-label { padding-top: 8px; font-size: 13px; font-weight: 600; color: #c8dcf0; }
+  .form-label-sm { font-size: 12px; }
+  select, input[type="text"], textarea { width: 100%; padding: 8px 12px; border-radius: 6px; border: 1px solid var(--border); background: var(--bg); color: var(--text); font-size: 13px; outline: none; }
+  select:focus, input:focus, textarea:focus { border-color: var(--primary); }
+  textarea { resize: vertical; font-family: inherit; }
+
+  .btn { display: inline-flex; align-items: center; gap: 6px; padding: 10px 20px; border-radius: 8px; border: none; font-size: 13px; font-weight: 600; cursor: pointer; transition: all 0.2s; color: white; }
+  .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+  .btn-primary { background: var(--primary); }
+  .btn-primary:hover:not(:disabled) { background: var(--primary-dark); }
+  .btn-success { background: var(--success); }
+  .btn-success:hover:not(:disabled) { background: #16a34a; }
+  .btn-danger { background: var(--danger); }
+  .btn-danger:hover:not(:disabled) { background: #dc2626; }
+  .btn-warning { background: var(--warning); }
+  .btn-warning:hover:not(:disabled) { background: #d97706; }
+  .btn-sm { padding: 6px 12px; font-size: 12px; }
+
+  .upload-area { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .upload-btn { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; padding: 24px; border-radius: 8px; border: 1px dashed var(--primary); background: var(--bg); cursor: pointer; transition: all 0.2s; color: var(--text); }
+  .upload-btn:hover { opacity: 0.9; }
+  .upload-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+  .upload-btn svg { width: 32px; height: 32px; color: var(--primary); }
+  .upload-btn span { font-size: 13px; }
+  .upload-btn small { font-size: 11px; color: var(--text-dim); }
+
+  .file-list { max-height: 160px; overflow-y: auto; font-size: 12px; font-family: monospace; }
+  .file-list .file-item { display: flex; justify-content: space-between; align-items: center; padding: 4px 0; border-bottom: 1px solid rgba(30,41,59,0.5); }
+  .file-list .file-item .remove-btn { color: #ff8a8a; cursor: pointer; padding: 0 4px; font-size: 14px; }
+
+  .range-group { display: flex; align-items: center; gap: 12px; }
+  .range-group input[type="range"] { flex: 1; }
+  .range-value { width: 80px; text-align: right; font-family: monospace; font-size: 13px; color: var(--primary); }
+  .range-reset { font-size: 11px; padding: 4px 8px; border-radius: 4px; border: none; background: var(--border); color: var(--text-dim); cursor: pointer; }
+
+  .progress-area { border-radius: 8px; overflow: hidden; margin-top: 16px; background: #050c17; border: 1px solid var(--border); }
+  .progress-header { padding: 8px 16px; font-size: 13px; font-weight: 500; background: var(--surface); color: var(--text-dim); }
+  .progress-log { padding: 16px; height: 200px; overflow-y: auto; font-family: monospace; font-size: 11px; color: #7fb3e0; white-space: pre-wrap; }
+  .progress-log .empty { color: #4a6b8a; }
+
+  .log-entry { margin: 0; line-height: 1.6; }
+  .log-info { color: #7fb3e0; }
+  .log-success { color: #5fdb7a; }
+  .log-error { color: #ff6b6b; }
+  .log-warning { color: #fbbf24; }
+
+  .output-area { border-radius: 8px; padding: 20px; margin-top: 16px; background: #0f2a1a; border: 1px solid #1f7a3f; }
+  .output-area h3 { color: #5fdb7a; font-size: 16px; margin-bottom: 4px; }
+  .output-area .sub { color: #a8d8b8; font-size: 12px; margin-bottom: 12px; }
+  .download-item { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; padding: 8px 0; border-bottom: 1px solid rgba(31,122,63,0.3); }
+  .download-item:last-child { border: none; }
+  .download-btn { padding: 8px 20px; border-radius: 6px; border: none; background: #0f9d58; color: white; font-weight: 600; cursor: pointer; font-size: 13px; text-decoration: none; display: inline-flex; align-items: center; gap: 6px; }
+  .download-btn:hover { background: #0d8a4d; }
+  audio { height: 36px; }
+
+  .info-box { background: rgba(148,163,184,0.08); border: 1px solid rgba(148,163,184,0.3); border-radius: 8px; padding: 10px 14px; font-size: 12px; line-height: 1.6; margin-top: 12px; }
+  .warning-box { background: #3a1e1e; border: 1px solid #b45309; border-radius: 8px; padding: 16px; margin-top: 16px; }
+  .warning-box .title { color: #ffb37a; font-weight: 600; margin-bottom: 8px; }
+
+  .status-bar { margin-top: 16px; padding: 12px 16px; background: #13233f; border: 1px solid var(--warning); border-radius: 8px; font-size: 13px; color: #fde9c8; }
+
+  .note-box { border-radius: 8px; padding: 16px; margin-top: 16px; background: var(--surface); border: 1px solid var(--border); }
+  .note-box .title { font-weight: 600; margin-bottom: 4px; color: #e8a63f; }
+  .note-box ul { font-size: 13px; line-height: 1.8; padding-left: 20px; color: #c8dcf0; }
+
+  .autochat-editor { min-height: 300px; width: 100%; padding: 16px; border-radius: 8px; border: 1px solid var(--border); background: var(--bg); color: var(--text); font-family: monospace; font-size: 13px; line-height: 1.8; resize: vertical; outline: none; }
+  .autochat-editor:focus { border-color: var(--primary); }
+
+  .hidden { display: none !important; }
+  .mt-2 { margin-top: 8px; }
+  .mt-4 { margin-top: 16px; }
+  .mb-2 { margin-bottom: 8px; }
+  .mb-4 { margin-bottom: 16px; }
+  .flex { display: flex; }
+  .flex-wrap { flex-wrap: wrap; }
+  .gap-2 { gap: 8px; }
+  .gap-3 { gap: 12px; }
+  .items-center { align-items: center; }
+  .justify-between { justify-content: space-between; }
+  .text-xs { font-size: 11px; }
+  .text-sm { font-size: 13px; }
+  .text-dim { color: var(--text-dim); }
+
+  /* Scrollbar */
+  ::-webkit-scrollbar { width: 6px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-inner">
+    <a class="logo" href="/">
+      <span class="logo-icon">🎤</span>
+      <span>VOICEMAX</span>
+    </a>
+    <span style="font-size:12px;color:var(--text-dim);margin-left:auto;">Bản quyền tự do</span>
+  </div>
+  <div class="nav-tabs" id="navTabs">
+    <div class="nav-tab active" data-tab="auto">
+      <div class="tab-content">
+        <div class="tab-icon">⚙️</div>
+        <div class="tab-info">
+          <div class="tab-title"><span>Tự Động</span><span class="tab-badge">.txt</span></div>
+          <div class="tab-desc">Bước 00 · Dây chuyền tự động</div>
+        </div>
+      </div>
+      <div class="tab-bottom"></div>
+    </div>
+    <div class="nav-tab" data-tab="autochat">
+      <div class="tab-content">
+        <div class="tab-icon">🤖</div>
+        <div class="tab-info">
+          <div class="tab-title"><span>AutoChat</span><span class="tab-badge">.txt</span></div>
+          <div class="tab-desc">Bước 01 · Viết kịch bản</div>
+        </div>
+      </div>
+      <div class="tab-bottom"></div>
+    </div>
+    <div class="nav-tab" data-tab="voicemax">
+      <div class="tab-content">
+        <div class="tab-icon" style="background:linear-gradient(135deg,var(--primary),#8b5cf6);color:white;">🔊</div>
+        <div class="tab-info">
+          <div class="tab-title"><span>VoiceMax</span><span class="tab-badge" style="background:rgba(59,130,246,0.2);color:var(--primary);">.mp3</span></div>
+          <div class="tab-desc">Bước 02 · Tạo giọng đọc</div>
+        </div>
+      </div>
+      <div class="tab-bottom"></div>
+    </div>
+    <div class="nav-tab" data-tab="erender">
+      <div class="tab-content">
+        <div class="tab-icon">🎬</div>
+        <div class="tab-info">
+          <div class="tab-title"><span>Erender</span><span class="tab-badge">.mp4</span></div>
+          <div class="tab-desc">Bước 03 · Dựng video</div>
+        </div>
+      </div>
+      <div class="tab-bottom"></div>
+    </div>
+  </div>
+</div>
+
+<div class="container">
+
+  <!-- ===== VOICEMAX TAB ===== -->
+  <div class="page active" id="page-voicemax">
+    <div class="status-bar" id="pipelineStatus" style="display:none;">
+      <b>⚡ Dây chuyền tự động</b> — <span id="pipelineText">...</span>
+    </div>
+
+    <div class="card">
+      <div class="form-group">
+        <div class="form-label">Chọn nguồn file .txt:</div>
+        <div>
+          <div class="upload-area">
+            <input type="file" id="fileInput" accept=".txt" multiple class="hidden" style="display:none;">
+            <input type="file" id="folderInput" webkitdirectory class="hidden" style="display:none;">
+            <button class="upload-btn" id="pickFilesBtn" onclick="document.getElementById('fileInput').click()">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="M10 9H8"/><path d="M16 13H8"/><path d="M16 17H8"/></svg>
+              <span>Chọn nhiều file</span>
+              <small>.txt</small>
+            </button>
+            <button class="upload-btn" id="pickFolderBtn">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m6 14 1.5-2.9A2 2 0 0 1 9.24 10H20a2 2 0 0 1 1.94 2.5l-1.54 6a2 2 0 0 1-1.95 1.5H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h3.9a2 2 0 0 1 1.69.9l.81 1.2a2 2 0 0 0 1.67.9H18a2 2 0 0 1 2 2v2"/></svg>
+              <span>Chọn cả thư mục</span>
+            </button>
+          </div>
+          <div id="folderPath" class="mt-2 text-xs text-dim" style="display:none;"></div>
+          <div class="text-xs mt-2" style="color:#a8c5e8;line-height:1.6;">
+            <b style="color:var(--primary);">📁 Chọn thư mục:</b> chọn 1 thư mục cha chứa nhiều thư mục con...
+          </div>
+        </div>
+      </div>
+
+      <div id="fileListArea" class="form-group" style="display:none;">
+        <div class="form-label">File sẽ chạy (<span id="fileCount">0</span>):</div>
+        <div>
+          <div class="file-list" id="fileList"></div>
+          <div class="text-xs mt-1 text-dim">💡 Bấm Chọn file nhiều lần để thêm nhiều file</div>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <div class="form-label">Gợi ý giọng:</div>
+        <select id="localeFilter">
+          <option value="">— Tất cả —</option>
+          <option value="en-US">Mỹ (en-US)</option>
+          <option value="en-GB">Anh (en-GB)</option>
+          <option value="en-AU">Úc (en-AU)</option>
+          <option value="en-CA">Canada (en-CA)</option>
+          <option value="de-DE">Đức (de-DE)</option>
+          <option value="fr-FR">Pháp (fr-FR)</option>
+          <option value="es-ES">Tây Ban Nha (es-ES)</option>
+          <option value="it-IT">Ý (it-IT)</option>
+          <option value="ja-JP">Nhật (ja-JP)</option>
+          <option value="ko-KR">Hàn (ko-KR)</option>
+          <option value="vi-VN">Việt Nam (vi-VN)</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <div class="form-label">Chọn giọng và ngôn ngữ:</div>
+        <div>
+          <select id="voiceSelect" size="1">
+            <option value="">Đang tải danh sách giọng...</option>
+          </select>
+          <div class="text-sm mt-1" id="voiceCount" style="color:#e85555;"></div>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <div class="form-label">Tốc độ đọc:</div>
+        <div class="range-group">
+          <input type="range" id="rateSlider" min="-50" max="50" step="5" value="0">
+          <span class="range-value" id="rateValue">+0%</span>
+          <button class="range-reset" onclick="document.getElementById('rateSlider').value=0; updateRate()">Reset</button>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <div class="form-label">Cao độ giọng:</div>
+        <div class="range-group">
+          <input type="range" id="pitchSlider" min="-50" max="50" step="5" value="0">
+          <span class="range-value" id="pitchValue">+0Hz</span>
+          <button class="range-reset" onclick="document.getElementById('pitchSlider').value=0; updatePitch()">Reset</button>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <div class="form-label">Đoạn test giọng:</div>
+        <div>
+          <textarea id="testText" rows="3" style="width:100%;padding:8px 12px;border-radius:6px;border:1px solid var(--border);background:var(--bg);color:var(--text);font-size:13px;resize:vertical;outline:none;">Hello everyone, before we begin today's story, I have a small favor to ask. Please hit SUBSCRIBE and turn on the notification bell so you never miss our new videos.</textarea>
+          <div class="text-sm mt-1" style="color:#5fdb7a;">Mẫu nghe thử: Tiếng Anh</div>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <div class="form-label">Luồng chạy (tăng tốc):</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+          <div>
+            <div class="form-label form-label-sm">Luồng / mỗi file (chunk song song):</div>
+            <div class="range-group">
+              <input type="range" id="chunkConcurrency" min="1" max="10" step="1" value="4">
+              <span class="range-value" id="chunkConcurrencyValue">4</span>
+            </div>
+            <div class="text-xs text-dim mt-1">Mặc định 4. Tăng lên 6–10 nếu mạng ổn định → nhanh hơn.</div>
+          </div>
+          <div>
+            <div class="form-label form-label-sm">Luồng file (nhiều file chạy song song):</div>
+            <div class="range-group">
+              <input type="range" id="fileConcurrency" min="1" max="6" step="1" value="1">
+              <span class="range-value" id="fileConcurrencyValue">1</span>
+            </div>
+            <div class="text-xs text-dim mt-1">Mặc định 1 (an toàn). 2–3 giúp rất nhanh nếu nhiều file nhỏ.</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="info-box">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display:inline;margin-right:6px;vertical-align:-2px;"><path d="M12 2v8"/><path d="m16 6-4 4-4-4"/><rect width="20" height="8" x="2" y="14" rx="2"/><path d="M6 18h.01"/><path d="M10 18h.01"/></svg>
+        Xong file giọng đọc sẽ <b>tự động tải về máy bạn</b>, đồng thời hiển thị dưới danh sách để tải lại hoặc nghe preview.
+      </div>
+
+      <div class="flex flex-wrap gap-2 mt-4">
+        <button class="btn btn-primary" id="testBtn" onclick="testVoice()">Test giọng</button>
+        <button class="btn btn-success" id="startBtn" onclick="startConversion()" disabled>Bắt đầu</button>
+        <button class="btn btn-danger" id="stopBtn" onclick="stopConversion()" disabled>Dừng</button>
+        <button class="btn btn-warning" onclick="clearAll()">Xoá</button>
+      </div>
+      <div class="text-sm mt-2 text-dim" id="progressLabel"></div>
+    </div>
+
+    <div class="note-box">
+      <div class="title">Lưu ý khi chuyển voice:</div>
+      <ul>
+        <li><b>File MP3 tải thẳng về máy</b> sau khi chạy xong.</li>
+        <li><b>Lưu ý:</b> file chỉ nằm trong trình duyệt — nếu tải lại (F5) trang thì phải chạy lại.</li>
+        <li><b>Chạy lại:</b> bấm <b>Chạy lại tất cả</b> để tổng hợp lại toàn bộ danh sách.</li>
+      </ul>
+    </div>
+
+    <div class="progress-area">
+      <div class="progress-header">Tiến trình <span id="progressTitle"></span></div>
+      <div style="padding:12px 16px;background:#06121f;border-bottom:1px solid var(--border);">
+        <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:6px;color:#9fb8d1;">
+          <span id="overallLabel">Chưa chạy</span>
+          <span id="overallPercent">0%</span>
+        </div>
+        <div style="height:10px;border-radius:999px;background:rgba(30,41,59,0.8);overflow:hidden;">
+          <div id="overallBar" style="width:0%;height:100%;background:linear-gradient(90deg,#3b82f6,#8b5cf6,#ec4899);transition:width .25s ease;border-radius:999px;"></div>
+        </div>
+        <div style="display:flex;justify-content:space-between;font-size:11px;margin-top:6px;color:#6d89a8;">
+          <span id="chunkProgress">0 đoạn / 0</span>
+          <span id="speedInfo">—</span>
+        </div>
+      </div>
+      <div class="progress-log" id="progressLog"><span class="empty">Chưa chạy...</span></div>
+    </div>
+
+    <div id="outputArea" class="output-area" style="display:none;">
+      <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:8px;">
+        <div>
+          <h3 style="color:#5fdb7a;font-size:16px;margin:0;">✅ File MP3 đã sẵn sàng</h3>
+          <div class="sub" id="outputSummary" style="color:#a8d8b8;font-size:12px;margin-top:4px;"></div>
+        </div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;">
+          <button class="btn btn-sm" style="background:#0ea5e9;border-color:#0ea5e9;" onclick="downloadAllOutputs()">⬇ Tải tất cả</button>
+          <button class="btn btn-sm" style="background:transparent;border:1px solid #1f7a3f;color:#5fdb7a;" onclick="document.getElementById('outputArea').scrollIntoView({behavior:'smooth'})">⤵ Đi đến danh sách</button>
+        </div>
+      </div>
+      <div id="outputList"></div>
+    </div>
+  </div>
+
+  <!-- ===== AUTOCHAT TAB ===== -->
+<div class="page" id="page-autochat">
+  <!-- Provider & API Key header -->
+  <div class="card" style="margin-bottom:16px;border:1px solid var(--border);">
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;align-items:center;">
+      <div style="display:flex;gap:8px;align-items:center;">
+        <span style="font-size:12px;font-weight:600;color:var(--text-dim);white-space:nowrap;">AI Provider:</span>
+        <select id="aiProvider" style="padding:6px 10px;border-radius:6px;border:1px solid var(--border);background:var(--bg);color:var(--text);font-size:12px;outline:none;">
+          <option value="openai">OpenAI</option>
+          <option value="gemini" selected>Gemini</option>
+        </select>
+        <select id="aiModel" style="padding:6px 10px;border-radius:6px;border:1px solid var(--border);background:var(--bg);color:var(--text);font-size:12px;outline:none;"></select>
+      </div>
+      <div style="display:flex;gap:8px;align-items:center;">
+        <span style="font-size:12px;font-weight:600;color:var(--text-dim);white-space:nowrap;">API Key:</span>
+        <input type="password" id="apiKeyInput" placeholder="sk-..." style="flex:1;padding:6px 10px;border-radius:6px;border:1px solid var(--border);background:var(--bg);color:var(--text);font-size:12px;outline:none;min-width:200px;">
+        <button class="btn btn-sm btn-primary" onclick="testApiKey()" id="testApiKeyBtn">Test</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Step 1: Chọn Trợ lý -->
+  <div style="margin-bottom:16px;border-radius:12px;border:1px solid rgba(99,102,241,0.2);background:var(--surface);overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,0.1);">
+    <div style="padding:24px 24px 12px;background:linear-gradient(135deg,rgba(99,102,241,0.1),rgba(139,92,246,0.05),transparent);">
+      <h3 style="font-size:20px;font-weight:600;display:flex;align-items:center;gap:12px;margin-bottom:4px;">
+        <span style="width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,#4f46e5,#7c3aed);color:white;font-size:14px;font-weight:700;display:inline-flex;align-items:center;justify-content:center;box-shadow:0 2px 4px rgba(79,70,229,0.3);">1</span>
+        Chọn Trợ lý ChatGPT theo ngách
+      </h3>
+      <p style="font-size:13px;color:var(--text-dim);">Mỗi trợ lý được huấn luyện cho 1 ngách. Chọn đúng ngách với file kịch bản để GPT bám sát phong cách.</p>
+    </div>
+    <div style="padding:12px 24px 24px;display:flex;flex-direction:column;gap:8px;">
+      <div style="position:relative;">
+        <select id="nicheSelect" style="width:100%;padding:10px 14px;border-radius:8px;border:1px solid var(--border);background:var(--bg);color:var(--text);font-size:13px;outline:none;appearance:none;cursor:pointer;">
+          <option value="">Đang tải ngách...</option>
+        </select>
+        <svg style="position:absolute;right:10px;top:50%;transform:translateY(-50%);width:16px;height:16px;color:var(--text-dim);pointer-events:none;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m7 15 5 5 5-5"/><path d="m7 9 5-5 5 5"/></svg>
+      </div>
+      <p style="font-size:11px;color:var(--text-dim);">Chỉ hiển thị ngách bạn đã mở khoá. Cần thêm? <a href="#" style="color:#6366f1;text-decoration:underline;">Mở khoá thêm ở 43 Ngách →</a></p>
+      <div style="display:flex;align-items:center;gap:8px;padding:8px 12px;border-radius:8px;border:1px dashed var(--border);background:var(--surface);">
+        <span style="font-size:12px;font-weight:500;color:var(--text-dim);">Ngách của tôi (riêng tư): <span id="privateNicheCount">0</span></span>
+        <button onclick="createNiche()" style="font-size:11px;padding:4px 10px;border-radius:6px;border:1px solid var(--border);background:transparent;color:var(--text);cursor:pointer;">+ Tạo ngách mới</button>
+        <button onclick="deleteNiche()" style="font-size:11px;padding:4px 10px;border-radius:6px;border:1px solid #ef4444;background:transparent;color:#ef4444;cursor:pointer;">🗑 Xoá</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Step 1b: Nhập tiêu đề -->
+  <div style="margin-bottom:16px;border-radius:12px;border:1px solid rgba(14,165,233,0.2);background:var(--surface);overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,0.1);">
+    <div style="padding:24px 24px 12px;background:linear-gradient(135deg,rgba(14,165,233,0.1),transparent);">
+      <h3 style="font-size:20px;font-weight:600;display:flex;align-items:center;gap:12px;margin-bottom:4px;">
+        <span style="width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,#0284c7,#0d9488);color:white;font-size:14px;font-weight:700;display:inline-flex;align-items:center;justify-content:center;box-shadow:0 2px 4px rgba(2,132,199,0.3);">1b</span>
+        Nhập tiêu đề → tự tạo file kịch bản
+      </h3>
+      <p style="font-size:13px;color:var(--text-dim);">Chưa có file <code style="background:rgba(148,163,184,0.15);padding:1px 4px;border-radius:3px;font-size:12px;">.txt</code>? Gõ tiêu đề (mỗi dòng 1 tiêu đề), chọn màu da và ngôi kể — hệ thống tự tạo file kịch bản mẫu và đưa thẳng vào danh sách chạy bên dưới.</p>
+    </div>
+    <div style="padding:12px 24px 24px;">
+      <div style="margin-bottom:16px;">
+        <label style="font-size:13px;font-weight:600;display:block;margin-bottom:4px;color:var(--text);">Tiêu đề (mỗi dòng 1 tiêu đề)</label>
+        <p style="font-size:11px;color:var(--text-dim);margin-bottom:8px;">Gõ CÙNG một tiêu đề nhiều dòng = tạo bấy nhiêu kịch bản khác nhau cho tiêu đề đó (mỗi bản đổi bối cảnh, diễn biến và twist).</p>
+        <textarea id="autochatTitles" rows="4" style="width:100%;padding:12px;border-radius:8px;border:1px solid var(--border);background:var(--bg);color:var(--text);font-size:13px;resize:vertical;outline:none;font-family:inherit;" placeholder="Chồng tôi bỏ đi giữa đêm...&#10;Mẹ chồng giấu tôi một bí mật..."></textarea>
+      </div>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px;">
+        <div>
+          <label style="font-size:13px;font-weight:600;display:block;margin-bottom:8px;color:var(--text);">Màu da 2 nhân vật</label>
+          <div style="padding:12px;border-radius:8px;border:1px solid var(--border);background:var(--surface);">
+            <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
+              <span style="width:80px;font-size:12px;color:var(--text-dim);">Nhân vật 1</span>
+              <select id="char1Gender" style="width:96px;padding:6px 8px;border-radius:6px;border:1px solid var(--border);background:var(--bg);color:var(--text);font-size:12px;outline:none;">
+                <option value="nam">Nam</option>
+                <option value="nữ">Nữ</option>
+              </select>
+              <select id="char1Skin" style="flex:1;padding:6px 8px;border-radius:6px;border:1px solid var(--border);background:var(--bg);color:var(--text);font-size:12px;outline:none;">
+                <option value="da trắng">Da trắng</option>
+                <option value="da vàng">Da vàng</option>
+                <option value="da ngăm">Da ngăm</option>
+                <option value="da nâu">Da nâu</option>
+                <option value="da đen">Da đen</option>
+              </select>
+            </div>
+            <div style="display:flex;align-items:center;gap:8px;">
+              <span style="width:80px;font-size:12px;color:var(--text-dim);">Nhân vật 2</span>
+              <select id="char2Gender" style="width:96px;padding:6px 8px;border-radius:6px;border:1px solid var(--border);background:var(--bg);color:var(--text);font-size:12px;outline:none;">
+                <option value="nam">Nam</option>
+                <option value="nữ" selected>Nữ</option>
+              </select>
+              <select id="char2Skin" style="flex:1;padding:6px 8px;border-radius:6px;border:1px solid var(--border);background:var(--bg);color:var(--text);font-size:12px;outline:none;">
+                <option value="da trắng">Da trắng</option>
+                <option value="da vàng">Da vàng</option>
+                <option value="da ngăm">Da ngăm</option>
+                <option value="da nâu">Da nâu</option>
+                <option value="da đen" selected>Da đen</option>
+              </select>
+            </div>
+            <div style="display:flex;align-items:center;gap:8px;padding-top:8px;margin-top:8px;border-top:1px solid var(--border);">
+              <span style="padding:4px 8px;border-radius:4px;background:var(--bg);font-size:11px;font-weight:500;color:var(--text-dim);" id="charConfigLabel">nam da đen - nữ da trắng</span>
+              <button onclick="swapCharacters()" style="font-size:11px;color:var(--text-dim);text-decoration:underline;background:none;border:none;cursor:pointer;">Đảo 2 nhân vật</button>
+            </div>
+          </div>
+          <label style="display:flex;align-items:flex-start;gap:8px;padding:8px;margin-top:8px;border-radius:8px;border:1px solid var(--border);cursor:pointer;">
+            <input type="checkbox" id="includeImagePrompts" checked style="margin-top:2px;">
+            <span style="font-size:13px;">
+              Tạo prompt 2 ảnh nhân vật (lệnh TA)
+              <span style="display:block;font-size:11px;color:var(--text-dim);">Bỏ chọn nếu không cần ảnh nhân vật — tiết kiệm chi phí API.</span>
+            </span>
+          </label>
+        </div>
+        <div>
+          <div style="margin-bottom:12px;">
+            <label style="font-size:13px;font-weight:600;display:block;margin-bottom:8px;color:var(--text);">Ngôi kể</label>
+            <select id="narrativePerspective" style="width:100%;padding:8px 12px;border-radius:8px;border:1px solid var(--border);background:var(--bg);color:var(--text);font-size:13px;outline:none;">
+              <option value="1">Ngôi thứ 1 (tôi kể)</option>
+              <option value="3">Ngôi thứ 3 (người kể ngoài)</option>
+            </select>
+          </div>
+          <div style="margin-bottom:12px;">
+            <label style="font-size:13px;font-weight:600;display:block;margin-bottom:8px;color:var(--text);">Số từ mỗi phần</label>
+            <input type="number" id="wordsPerPart" value="550" min="100" max="2000" step="50" style="width:100%;padding:8px 12px;border-radius:8px;border:1px solid var(--border);background:var(--bg);color:var(--text);font-size:13px;outline:none;">
+            <p style="font-size:11px;color:var(--text-dim);margin-top:4px;">Mặc định 550 từ.</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Preview -->
+      <div style="padding:12px;border-radius:8px;border:1px solid var(--border);background:var(--surface);margin-bottom:16px;">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
+          <label style="font-size:13px;font-weight:600;color:var(--text);">Xem trước nội dung (tiêu đề đầu tiên)</label>
+          <button class="btn btn-sm" onclick="previewScript()" style="background:transparent;border:1px solid var(--border);color:var(--text);">Xem trước</button>
+        </div>
+        <pre id="previewContent" style="max-height:200px;overflow:auto;white-space:pre-wrap;padding:12px;border-radius:8px;border:1px solid var(--border);background:rgba(0,0,0,0.2);font-size:11px;line-height:1.6;color:var(--text-dim);">Nhập tiêu đề ở trên để xem trước toàn bộ nội dung kịch bản sẽ gửi cho trợ lý.</pre>
+      </div>
+
+      <!-- Script name + Add to queue -->
+      <div style="margin-bottom:12px;">
+        <label style="font-size:13px;font-weight:600;display:block;margin-bottom:4px;color:var(--text);">Tên kịch bản <span style="color:#ef4444;">*</span> (bắt buộc)</label>
+        <input type="text" id="scriptNameInput" placeholder="N42VIDEO1" style="width:100%;padding:8px 12px;border-radius:8px;border:1px solid var(--border);background:var(--bg);color:var(--text);font-size:13px;outline:none;">
+        <p style="font-size:11px;color:var(--text-dim);margin-top:4px;">Nhập nhiều tiêu đề thì tên tự tăng dần: N42VIDEO1, N42VIDEO2, N42VIDEO3…</p>
+      </div>
+      <button class="btn btn-success" onclick="addToQueue()" style="width:100%;padding:10px 20px;font-size:14px;" id="addToQueueBtn">+ Đưa vào danh sách chạy</button>
+    </div>
+  </div>
+
+  <!-- Step 1c: Upload file -->
+  <div style="margin-bottom:16px;border-radius:12px;border:1px solid rgba(16,185,129,0.2);background:var(--surface);overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,0.1);">
+    <div style="padding:24px 24px 12px;background:linear-gradient(135deg,rgba(16,185,129,0.1),transparent);">
+      <h3 style="font-size:20px;font-weight:600;display:flex;align-items:center;gap:12px;margin-bottom:4px;">
+        <span style="width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,#059669,#0d9488);color:white;font-size:14px;font-weight:700;display:inline-flex;align-items:center;justify-content:center;box-shadow:0 2px 4px rgba(5,150,105,0.3);">1c</span>
+        Hoặc tải lên file kịch bản có sẵn (.txt)
+      </h3>
+      <p style="font-size:13px;color:var(--text-dim);">Đã tự viết sẵn bộ lệnh/kịch bản trong file <code style="background:rgba(148,163,184,0.15);padding:1px 4px;border-radius:3px;font-size:12px;">.txt</code>? Tải thẳng lên đây — file sẽ được thêm vào danh sách chạy bên dưới, không cần nhập tiêu đề.</p>
+    </div>
+    <div style="padding:12px 24px 24px;">
+      <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:8px;">
+        <button class="btn btn-sm" onclick="document.getElementById('autochatFileInput').click()" style="background:transparent;border:1px solid var(--border);color:var(--text);">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right:4px;"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="M12 12v6"/><path d="m15 15-3-3-3 3"/></svg>
+          Chọn file .txt
+        </button>
+        <button class="btn btn-sm" onclick="document.getElementById('autochatFolderInput').click()" style="background:transparent;border:1px solid var(--border);color:var(--text);">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right:4px;"><path d="m6 14 1.5-2.9A2 2 0 0 1 9.24 10H20a2 2 0 0 1 1.94 2.5l-1.54 6a2 2 0 0 1-1.95 1.5H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h3.9a2 2 0 0 1 1.69.9l.81 1.2a2 2 0 0 0 1.67.9H18a2 2 0 0 1 2 2v2"/></svg>
+          Chọn cả thư mục
+        </button>
+      </div>
+      <input type="file" id="autochatFileInput" accept=".txt" multiple style="display:none;">
+      <input type="file" id="autochatFolderInput" webkitdirectory style="display:none;">
+      <div id="autochatUploadedFiles" class="text-xs text-dim"></div>
+      <p style="font-size:11px;color:var(--text-dim);margin-top:8px;">Chọn cả thư mục còn giúp kịch bản kết quả tự lưu đúng vào thư mục đó thay vì Thư mục Tải xuống.</p>
+    </div>
+  </div>
+
+  <!-- Step 2: Run -->
+  <div style="margin-bottom:16px;border-radius:12px;border:1px solid rgba(99,102,241,0.3);background:var(--surface);overflow:hidden;box-shadow:0 2px 8px rgba(99,102,241,0.1);">
+    <div style="padding:24px 24px 12px;background:linear-gradient(135deg,rgba(99,102,241,0.15),rgba(139,92,246,0.1),rgba(217,70,239,0.05));">
+      <h3 style="font-size:20px;font-weight:600;display:flex;align-items:center;gap:12px;margin-bottom:4px;">
+        <span style="width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,#4f46e5,#7c3aed);color:white;font-size:14px;font-weight:700;display:inline-flex;align-items:center;justify-content:center;box-shadow:0 2px 4px rgba(79,70,229,0.3);">2</span>
+        Chạy
+      </h3>
+      <p style="font-size:13px;color:var(--text-dim);">Bấm <strong>Bắt đầu</strong> để hệ thống chạy tuần tự từng file (an toàn nhất, hầu như không dính rate-limit OpenAI).</p>
+    </div>
+    <div style="padding:12px 24px 24px;">
+      <div style="padding:12px;border-radius:8px;border:1px solid rgba(99,102,241,0.3);background:rgba(99,102,241,0.05);margin-bottom:16px;font-size:12px;color:var(--text-dim);">
+        <div style="font-weight:600;color:#818cf8;margin-bottom:4px;">Vì sao chỉ chạy 1 luồng?</div>
+        <p style="margin-bottom:4px;">OpenAI giới hạn <strong>số token/phút (TPM)</strong> trên mỗi API key. Chạy tuần tự 1 file là ổn định nhất — không bị cắt cụt đoạn hay chờ dài.</p>
+        <p>Nếu vẫn bị limit, hệ thống <strong>tự chờ rồi tiếp tục</strong> từ lệnh đã lưu — không mất tiến độ (tối đa 5 lần tự chờ liên tiếp mỗi file).</p>
+      </div>
+
+      <!-- Queue list -->
+      <div style="margin-bottom:12px;">
+        <div style="font-size:13px;font-weight:600;color:var(--text-dim);margin-bottom:8px;">Danh sách chạy (<span id="queueCount">0</span> file)</div>
+        <div id="queueList" style="max-height:200px;overflow-y:auto;border-radius:8px;border:1px solid var(--border);">
+          <div style="padding:12px;text-align:center;font-size:12px;color:var(--text-dim);">Chưa có file nào trong danh sách.</div>
+        </div>
+      </div>
+
+      <div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:16px;">
+        <button class="btn btn-success" onclick="startAutochatRun()" id="autochatStartBtn" disabled style="padding:12px 32px;font-size:14px;background:linear-gradient(135deg,#4f46e5,#7c3aed);">▶ Bắt đầu</button>
+        <button class="btn btn-danger" onclick="stopAutochatRun()" id="autochatStopBtn" disabled>⏹ Dừng</button>
+        <button class="btn btn-warning" onclick="clearAutochatQueue()">Xoá danh sách</button>
+      </div>
+
+      <div id="autochatProgress" style="min-height:20px;font-size:13px;margin-bottom:12px;"></div>
+
+      <div style="padding:10px 12px;border-radius:8px;border:1px solid rgba(148,163,184,0.35);background:rgba(148,163,184,0.08);font-size:13px;line-height:1.6;">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display:inline;margin-right:6px;vertical-align:-2px;"><path d="M12 2v8"/><path d="m16 6-4 4-4-4"/><rect width="20" height="8" x="2" y="14" rx="2"/><path d="M6 18h.01"/><path d="M10 18h.01"/></svg>
+        Xong file kịch bản sẽ <b>tự động tải về máy bạn</b> — đúng thư mục bạn đã chọn khi tải nguyên liệu lên.
+      </div>
+    </div>
+  </div>
+
+  <!-- History -->
+  <div style="border-radius:12px;border:1px solid rgba(99,102,241,0.2);background:var(--surface);overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,0.1);">
+    <div style="padding:24px 24px 12px;background:linear-gradient(135deg,rgba(99,102,241,0.1),rgba(139,92,246,0.05),transparent);">
+      <div style="display:flex;align-items:center;justify-content:space-between;">
+        <div>
+          <h3 style="font-size:20px;font-weight:600;display:flex;align-items:center;gap:8px;background:linear-gradient(135deg,#6366f1,#8b5cf6);-webkit-background-clip:text;-webkit-text-fill-color:transparent;">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#6366f1" stroke-width="2" style="-webkit-text-fill-color:initial;"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/><path d="M12 7v5l4 2"/></svg>
+            Lịch sử chat đã lưu
+          </h3>
+          <p style="font-size:13px;color:var(--text-dim);">Chỉ lưu trong 2 ngày gần nhất, sau đó tự động xoá. Click để xem lại lệnh và câu trả lời GPT.</p>
+        </div>
+        <button class="btn btn-sm" onclick="loadAutochatHistory()" style="background:transparent;border:1px solid var(--border);color:var(--text);">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right:4px;"><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/><path d="M8 16H3v5"/></svg>
+          Làm mới
+        </button>
+      </div>
+    </div>
+    <div style="padding:12px 24px 24px;">
+      <div id="autochatHistoryList" style="max-height:200px;overflow-y:auto;border-radius:8px;border:1px solid var(--border);"></div>
+    </div>
+  </div>
+</div>
+
+  <!-- ===== TỰ ĐỘNG TAB ===== -->
+  <div class="page" id="page-auto">
+    <div class="card">
+      <h2 style="font-size:18px;font-weight:700;margin-bottom:16px;">⚙️ Dây chuyền tự động</h2>
+      <p style="color:var(--text-dim);margin-bottom:16px;">Tự động: AutoChat → VoiceMax. Chưa hỗ trợ Erender.</p>
+      <div class="form-group">
+        <div class="form-label">Chọn kịch bản:</div>
+        <select id="autoScriptSelect" style="width:100%;">
+          <option value="">— Chưa có kịch bản nào —</option>
+        </select>
+      </div>
+      <div class="flex gap-2">
+        <button class="btn btn-success" onclick="runAutoPipeline()">▶ Chạy dây chuyền</button>
+        <button class="btn btn-primary" onclick="sendToVoiceMax()">📤 Gửi sang VoiceMax</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== ERENDER TAB ===== -->
+  <div class="page" id="page-erender">
+    <div class="card" style="text-align:center;padding:60px 20px;">
+      <div style="font-size:48px;margin-bottom:16px;">🎬</div>
+      <h2 style="font-size:20px;font-weight:700;margin-bottom:8px;">Erender — Dựng video</h2>
+      <p style="color:var(--text-dim);margin-bottom:16px;">Tính năng dựng video tự động chưa được hỗ trợ trong bản clone này.</p>
+      <p style="color:var(--text-dim);font-size:13px;">Bạn có thể dùng VoiceMax để tạo giọng đọc, sau đó dùng phần mềm edit video khác.</p>
+    </div>
+  </div>
+
+</div>
+
+<script>
+// ==================== STATE ====================
+const state = {
+  files: [],       // { id, name, text, relPath }
+  voices: [],
+  running: false,
+  abortController: null,
+  outputs: [],
+  logs: [],
+  scripts: JSON.parse(localStorage.getItem('vm_scripts') || '[]'),
+};
+
+// ==================== TABS ====================
+document.querySelectorAll('.nav-tab').forEach(tab => {
+  tab.addEventListener('click', () => {
+    document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+    tab.classList.add('active');
+    document.getElementById('page-' + tab.dataset.tab).classList.add('active');
+    if (tab.dataset.tab === 'autochat') refreshScripts();
+    if (tab.dataset.tab === 'auto') refreshAutoScripts();
+  });
+});
+
+// ==================== VOICE LIST ====================
+async function loadVoices() {
+  const select = document.getElementById('voiceSelect');
+  try {
+    const res = await fetch('/api/voices');
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    state.voices = await res.json();
+    
+    // Sort by locale then name
+    state.voices.sort((a, b) => {
+      if (a.Locale !== b.Locale) return a.Locale.localeCompare(b.Locale);
+      return a.ShortName.localeCompare(b.ShortName);
+    });
+    
+    renderVoices();
+    document.getElementById('voiceCount').textContent = `Đã tải ${state.voices.length} giọng`;
+  } catch (err) {
+    select.innerHTML = '<option value="">Lỗi tải danh sách giọng: ' + err.message + '</option>';
+    document.getElementById('voiceCount').textContent = '❌ Không tải được danh sách giọng';
+  }
+}
+
+function renderVoices() {
+  const filter = document.getElementById('localeFilter').value;
+  const select = document.getElementById('voiceSelect');
+  const filtered = filter ? state.voices.filter(v => v.Locale === filter) : state.voices;
+  
+  select.innerHTML = filtered.map(v => {
+    const gender = v.Gender === 'Female' ? 'Nữ' : 'Nam';
+    const name = v.FriendlyName.replace(/^Microsoft\s+/i, '').replace(/Neural\b/, '');
+    const region = v.Locale.split('-')[1] || '';
+    return `<option value="${v.ShortName}">${v.Locale} | ${name} (${gender})</option>`;
+  }).join('');
+  
+  document.getElementById('voiceCount').textContent = `Đã tải ${state.voices.length} giọng | ★ ${filtered.length} gợi ý`;
+}
+
+document.getElementById('localeFilter').addEventListener('change', renderVoices);
+
+// ==================== RATE & PITCH ====================
+function updateRate() {
+  const val = parseInt(document.getElementById('rateSlider').value);
+  document.getElementById('rateValue').textContent = (val >= 0 ? '+' : '') + val + '%';
+}
+function updatePitch() {
+  const val = parseInt(document.getElementById('pitchSlider').value);
+  document.getElementById('pitchValue').textContent = (val >= 0 ? '+' : '') + val + 'Hz';
+}
+document.getElementById('rateSlider').addEventListener('input', updateRate);
+document.getElementById('pitchSlider').addEventListener('input', updatePitch);
+
+// ==================== FILE MANAGEMENT ====================
+document.getElementById('fileInput').addEventListener('change', async (e) => {
+  await addFiles(e.target.files, false);
+  e.target.value = '';
+});
+
+document.getElementById('folderInput').addEventListener('change', async (e) => {
+  const files = e.target.files;
+  if (files.length) {
+    const folderName = files[0].webkitRelativePath.split('/')[0];
+    document.getElementById('folderPath').style.display = 'block';
+    document.getElementById('folderPath').textContent = `📁 ${folderName}`;
+    document.getElementById('folderPath').innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display:inline;vertical-align:-2px;"><path d="m6 14 1.5-2.9A2 2 0 0 1 9.24 10H20a2 2 0 0 1 1.94 2.5l-1.54 6a2 2 0 0 1-1.95 1.5H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h3.9a2 2 0 0 1 1.69.9l.81 1.2a2 2 0 0 0 1.67.9H18a2 2 0 0 1 2 2v2"/></svg> 📁 ${folderName}`;
+  }
+  await addFiles(files, true);
+  e.target.value = '';
+});
+
+document.getElementById('pickFolderBtn').addEventListener('click', () => {
+  document.getElementById('folderInput').click();
+});
+
+async function addFiles(fileList, isFolder) {
+  const txtFiles = [];
+  for (const f of fileList) {
+    if (!f.name.toLowerCase().endsWith('.txt')) continue;
+    const text = await f.text();
+    txtFiles.push({
+      id: Math.random().toString(36).slice(2, 10),
+      name: f.name.replace(/\.txt$/i, ''),
+      text: text.trim(),
+      relPath: f.webkitRelativePath || f.name,
+    });
+  }
+  if (!txtFiles.length) return;
+  
+  // Deduplicate
+  const existing = new Set(state.files.map(f => f.relPath));
+  for (const f of txtFiles) {
+    if (!existing.has(f.relPath)) {
+      state.files.push(f);
+      existing.add(f.relPath);
+    }
+  }
+  
+  renderFileList();
+  addLog(`Đã nạp ${txtFiles.length} file .txt (tổng ${state.files.length})`);
+}
+
+function removeFile(id) {
+  state.files = state.files.filter(f => f.id !== id);
+  renderFileList();
+}
+
+function renderFileList() {
+  const area = document.getElementById('fileListArea');
+  const list = document.getElementById('fileList');
+  const count = document.getElementById('fileCount');
+  const startBtn = document.getElementById('startBtn');
+  
+  if (state.files.length === 0) {
+    area.style.display = 'none';
+    startBtn.disabled = true;
+    return;
+  }
+  
+  area.style.display = '';
+  count.textContent = state.files.length;
+  list.innerHTML = state.files.map(f => 
+    `<div class="file-item">
+      <span>📄 ${f.relPath} (${f.text.length.toLocaleString()} ký tự)</span>
+      <span class="remove-btn" onclick="removeFile('${f.id}')">✕</span>
+    </div>`
+  ).join('');
+  startBtn.disabled = false;
+}
+
+// ==================== TEST VOICE ====================
+async function testVoice() {
+  const text = document.getElementById('testText').value.trim();
+  const voice = document.getElementById('voiceSelect').value;
+  if (!text) return addLog('⚠️ Nhập đoạn test', 'warning');
+  if (!voice) return addLog('⚠️ Chọn giọng đọc', 'warning');
+  
+  const btn = document.getElementById('testBtn');
+  btn.disabled = true;
+  addLog('🎧 Đang test giọng...');
+  
+  try {
+    const res = await fetch('/api/tts', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ text, voice, rate: document.getElementById('rateValue').textContent, pitch: document.getElementById('pitchValue').textContent })
+    });
+    if (!res.ok) throw new Error(await res.text());
+    const blob = await res.blob();
+    const url = URL.createObjectURL(blob);
+    new Audio(url).play();
+    addLog('✅ Test OK', 'success');
+  } catch (err) {
+    addLog('❌ Test lỗi: ' + err.message, 'error');
+  }
+  btn.disabled = false;
+}
+
+// ==================== CONVERSION ====================
+const MAX_RETRIES = 3;
+const CHUNK_SIZE = 2200;
+
+(function bindConcurrencySliders() {
+  const cc = document.getElementById('chunkConcurrency');
+  const ccv = document.getElementById('chunkConcurrencyValue');
+  if (cc && ccv) cc.addEventListener('input', () => ccv.textContent = cc.value);
+  const fc = document.getElementById('fileConcurrency');
+  const fcv = document.getElementById('fileConcurrencyValue');
+  if (fc && fcv) fc.addEventListener('input', () => fcv.textContent = fc.value);
+})();
+
+function splitText(text) {
+  const chunks = [];
+  for (let i = 0; i < text.length; i += CHUNK_SIZE) {
+    chunks.push(text.slice(i, i + CHUNK_SIZE));
+  }
+  return chunks;
+}
+
+async function convertChunk(text, voice, rate, pitch, signal) {
+  const res = await fetch('/api/tts', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ text, voice, rate, pitch }),
+    signal
+  });
+  if (!res.ok) throw new Error(await res.text());
+  return await res.arrayBuffer();
+}
+
+async function runWithConcurrency(items, concurrency, worker) {
+  const results = new Array(items.length);
+  let cursor = 0;
+  const spawn = async () => {
+    while (cursor < items.length) {
+      const idx = cursor++;
+      try { results[idx] = await worker(items[idx], idx); }
+      catch (e) { results[idx] = { __error: e }; }
+    }
+  };
+  const threads = [];
+  for (let i = 0; i < concurrency; i++) threads.push(spawn());
+  await Promise.all(threads);
+  return results;
+}
+
+function resetProgressUI() {
+  document.getElementById('overallBar').style.width = '0%';
+  document.getElementById('overallPercent').textContent = '0%';
+  document.getElementById('overallLabel').textContent = 'Chuẩn bị...';
+  document.getElementById('chunkProgress').textContent = '0 đoạn / 0';
+  document.getElementById('speedInfo').textContent = '—';
+  document.getElementById('progressTitle').textContent = '';
+}
+
+function updateOverallProgress(runCtx) {
+  const pct = runCtx.totalChunks === 0 ? 0 : Math.min(100, Math.round((runCtx.doneChunks / runCtx.totalChunks) * 100));
+  document.getElementById('overallBar').style.width = pct + '%';
+  document.getElementById('overallPercent').textContent = pct + '%';
+  document.getElementById('chunkProgress').textContent = `${runCtx.doneChunks} đoạn / ${runCtx.totalChunks} • ${runCtx.doneFiles} file / ${runCtx.totalFiles}`;
+  const elapsed = (Date.now() - runCtx.startTime) / 1000;
+  if (elapsed > 2 && runCtx.doneChunks > 0) {
+    const speed = runCtx.doneChunks / elapsed;
+    document.getElementById('speedInfo').textContent = `${speed.toFixed(1)} đoạn/s • ${elapsed.toFixed(0)}s`;
+  }
+}
+
+function downloadFileFromBlob(blob, name) {
+  const url = URL.createObjectURL(blob);
+  try {
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = name;
+    document.body.appendChild(a);
+    a.click();
+    setTimeout(() => { try { document.body.removeChild(a); } catch (_) {} }, 1500);
+  } catch (_) {}
+  return url;
+}
+
+function renderOutputs() {
+  const area = document.getElementById('outputArea');
+  const list = document.getElementById('outputList');
+  const summary = document.getElementById('outputSummary');
+  area.style.display = state.outputs.length ? 'block' : 'none';
+  const totalMB = state.outputs.reduce((s, o) => s + (o.size || 0), 0) / 1024 / 1024;
+  summary.textContent = `${state.outputs.length} file MP3 • Tổng ${totalMB.toFixed(1)} MB • bấm nút để tải về máy hoặc nghe preview`;
+  list.innerHTML = state.outputs.map(o => 
+    `<div class="download-item" style="display:grid;grid-template-columns:1fr auto;gap:12px;align-items:center;">
+      <div style="display:flex;flex-direction:column;gap:4px;min-width:0;">
+        <div style="font-weight:600;font-size:13px;color:#d8e5f3;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${o.name}</div>
+        <div style="font-size:11px;color:#6d89a8;">${(o.size/1024/1024).toFixed(2)} MB</div>
+        <audio controls src="${o.url}" style="height:30px;width:100%;margin-top:2px;"></audio>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:4px;align-items:flex-end;">
+        <a class="download-btn" href="${o.url}" download="${o.name}" style="text-decoration:none;">⬇ Tải</a>
+      </div>
+    </div>`
+  ).join('');
+}
+
+function downloadAllOutputs() {
+  if (!state.outputs.length) return;
+  state.outputs.forEach((o, i) => {
+    setTimeout(() => {
+      const a = document.createElement('a');
+      a.href = o.url;
+      a.download = o.name;
+      document.body.appendChild(a);
+      a.click();
+      setTimeout(() => { try { document.body.removeChild(a); } catch (_) {} }, 2000);
+    }, i * 350);
+  });
+}
+
+async function processOneFile(file, fileIdx, opts, runCtx) {
+  const { voice, rate, pitch, chunkConcurrency } = opts;
+  const chunks = splitText(file.text);
+  runCtx.fileChunkTotals[fileIdx] = chunks.length;
+  addLog(`[${fileIdx+1}/${runCtx.totalFiles}] 🎬 ${file.relPath} (${file.text.length} ký tự, ${chunks.length} đoạn) • ${chunkConcurrency} luồng`);
+  document.getElementById('overallLabel').textContent = `Đang xử lý: ${file.name} (${chunks.length} đoạn)`;
+  document.getElementById('progressTitle').textContent = `File ${fileIdx+1}/${runCtx.totalFiles}`;
+
+  const results = await runWithConcurrency(chunks, chunkConcurrency, async (text, j) => {
+    if (state.abortController.signal.aborted) throw new DOMException('Aborted', 'AbortError');
+    let lastError = null;
+    for (let retry = 0; retry <= MAX_RETRIES; retry++) {
+      if (state.abortController.signal.aborted) throw new DOMException('Aborted', 'AbortError');
+      try {
+        if (retry > 0) addLog(`  ⏳ ${file.name} • đoạn ${j+1} thử lại ${retry}/${MAX_RETRIES}`, 'warning');
+        const data = await convertChunk(text, voice, rate, pitch, state.abortController.signal);
+        runCtx.doneChunks++;
+        updateOverallProgress(runCtx);
+        return data;
+      } catch (err) {
+        lastError = err;
+        if (err.name === 'AbortError') throw err;
+        if (retry < MAX_RETRIES) await new Promise(r => setTimeout(r, 600 * (retry + 1)));
+      }
+    }
+    throw lastError || new Error('Unknown');
+  });
+
+  if (state.abortController.signal.aborted) throw new DOMException('Aborted', 'AbortError');
+
+  const audioChunks = [];
+  let anyFail = false;
+  for (let i = 0; i < results.length; i++) {
+    const r = results[i];
+    if (r && r.__error) {
+      anyFail = true;
+      addLog(`  ⚠️ ${file.name} • đoạn ${i+1} lỗi: ${r.__error.message}`, 'error');
+    } else if (r instanceof ArrayBuffer) {
+      audioChunks.push(r);
+    } else {
+      anyFail = true;
+    }
+  }
+  if (anyFail && audioChunks.length === 0) {
+    throw new Error('Tất cả đoạn đều lỗi');
+  }
+
+  const ordered = [];
+  for (let i = 0; i < results.length; i++) {
+    const r = results[i];
+    if (r instanceof ArrayBuffer) ordered.push(r);
+  }
+  const totalLen = ordered.reduce((s, c) => s + c.byteLength, 0);
+  const merged = new Uint8Array(totalLen);
+  let offset = 0;
+  for (const c of ordered) {
+    merged.set(new Uint8Array(c), offset);
+    offset += c.byteLength;
+  }
+  const blob = new Blob([merged], { type: 'audio/mpeg' });
+  const url = URL.createObjectURL(blob);
+  const name = file.name + '.mp3';
+  state.outputs.push({ name, url, size: totalLen, blob });
+  runCtx.doneFiles++;
+  updateOverallProgress(runCtx);
+  addLog(`  ✅ ${file.name} — xong (${(totalLen/1024/1024).toFixed(1)} MB)`, 'success');
+  // Auto-download ngay lập tức sau khi xong
+  setTimeout(() => downloadFileFromBlob(blob, name), 30);
+  // Render list incremental để user thấy nút tải + preview ngay
+  renderOutputs();
+  return true;
+}
+
+async function startConversion() {
+  if (state.running) return;
+  if (!state.files.length) return;
+
+  state.running = true;
+  state.abortController = new AbortController();
+  state.outputs = [];
+  updateButtons();
+
+  const voice = document.getElementById('voiceSelect').value;
+  const rate = document.getElementById('rateValue').textContent;
+  const pitch = document.getElementById('pitchValue').textContent;
+  const chunkConcurrency = Math.max(1, parseInt(document.getElementById('chunkConcurrency').value || '4', 10));
+  const fileConcurrency  = Math.max(1, parseInt(document.getElementById('fileConcurrency').value  || '1', 10));
+  const totalFiles = state.files.length;
+
+  clearLog();
+  resetProgressUI();
+  addLog(`🎬 Bắt đầu chuyển ${totalFiles} file • chunkThreads=${chunkConcurrency} • fileThreads=${fileConcurrency}`);
+
+  const fileChunkTotals = new Array(totalFiles).fill(0);
+  state.files.forEach((f, i) => fileChunkTotals[i] = splitText(f.text).length);
+  const totalChunks = fileChunkTotals.reduce((s, n) => s + n, 0);
+
+  const runCtx = {
+    totalFiles, totalChunks,
+    fileChunkTotals,
+    doneChunks: 0,
+    doneFiles: 0,
+    startTime: Date.now()
+  };
+  updateOverallProgress(runCtx);
+  document.getElementById('outputArea').style.display = 'none';
+  document.getElementById('outputList').innerHTML = '';
+
+  const opts = { voice, rate, pitch, chunkConcurrency };
+  let successCount = 0;
+  let failCount = 0;
+
+  try {
+    const fileResults = await runWithConcurrency(state.files, fileConcurrency, async (file, i) => {
+      if (state.abortController.signal.aborted) throw new DOMException('Aborted', 'AbortError');
+      try {
+        await processOneFile(file, i, opts, runCtx);
+        return { ok: true };
+      } catch (e) {
+        if (e.name === 'AbortError') throw e;
+        addLog(`  ⚠️ ${file.name} — thất bại: ${e.message}`, 'error');
+        return { ok: false, err: e };
+      }
+    });
+
+    successCount = fileResults.filter(r => r && r.ok).length;
+    failCount = fileResults.length - successCount;
+  } catch (topErr) {
+    if (topErr && topErr.name !== 'AbortError') {
+      addLog('❌ Lỗi toàn cục: ' + topErr.message, 'error');
+    }
+  }
+
+  state.running = false;
+  updateButtons();
+
+  if (state.abortController.signal.aborted) {
+    addLog('⏹ Đã dừng theo yêu cầu', 'warning');
+  }
+
+  const donePct = runCtx.totalChunks === 0 ? 0 : Math.min(100, Math.round((runCtx.doneChunks / runCtx.totalChunks) * 100));
+  document.getElementById('overallBar').style.width = donePct + '%';
+  document.getElementById('overallPercent').textContent = donePct + '%';
+  document.getElementById('overallLabel').textContent = state.abortController.signal.aborted
+    ? `Đã dừng • ${runCtx.doneFiles}/${runCtx.totalFiles} file`
+    : `Xong • ${runCtx.doneFiles}/${runCtx.totalFiles} file`;
+  const totalSec = (Date.now() - runCtx.startTime) / 1000;
+  document.getElementById('speedInfo').textContent = `${runCtx.doneChunks} đoạn • ${totalSec.toFixed(0)}s`;
+
+  renderOutputs();
+  if (state.outputs.length > 0) {
+    addLog(`✅ Hoàn thành ${state.outputs.length}/${totalFiles} file (tổng ${totalChunks} đoạn, ${totalSec.toFixed(0)}s)`, 'success');
+    if (!state.abortController.signal.aborted) {
+      addLog('⬇ Đã tự động tải từng file về máy. Nếu cần tải lại hoặc nghe preview, dùng danh sách dưới (nút Tải tất cả).', 'info');
+    }
+  } else {
+    addLog('❌ Không tạo được file MP3 nào', 'error');
+  }
+  if (failCount > 0) addLog(`⚠️ Có ${failCount} file lỗi hoặc bị bỏ lỡ`, 'warning');
+}
+
+function stopConversion() {
+  if (state.abortController) {
+    state.abortController.abort();
+    addLog('⏹ Đang dừng...', 'warning');
+  }
+}
+
+function clearAll() {
+  if (state.running) return;
+  state.files = [];
+  state.outputs = [];
+  renderFileList();
+  clearLog();
+  resetProgressUI();
+  document.getElementById('progressLabel').textContent = '';
+  document.getElementById('outputArea').style.display = 'none';
+  document.getElementById('outputList').innerHTML = '';
+  document.getElementById('folderPath').style.display = 'none';
+}
+
+function updateButtons() {
+  document.getElementById('startBtn').disabled = state.running || !state.files.length;
+  document.getElementById('stopBtn').disabled = !state.running;
+  document.getElementById('testBtn').disabled = state.running;
+  document.getElementById('pickFilesBtn').disabled = state.running;
+  document.getElementById('pickFolderBtn').disabled = state.running;
+}
+
+// ==================== LOGGING ====================
+function addLog(msg, type = 'info') {
+  const log = document.getElementById('progressLog');
+  const empty = log.querySelector('.empty');
+  if (empty) empty.remove();
+  
+  const colors = { info: '#7fb3e0', success: '#5fdb7a', error: '#ff6b6b', warning: '#fbbf24' };
+  const div = document.createElement('div');
+  div.className = 'log-entry';
+  div.style.color = colors[type] || colors.info;
+  div.textContent = msg;
+  log.appendChild(div);
+  log.scrollTop = log.scrollHeight;
+}
+
+function clearLog() {
+  document.getElementById('progressLog').innerHTML = '';
+}
+
+// ==================== OUTPUT ====================
+function showOutputs() {
+  const area = document.getElementById('outputArea');
+  const list = document.getElementById('outputList');
+  area.style.display = 'block';
+  document.getElementById('outputSummary').textContent = `${state.outputs.length} file MP3 • bấm để tải về máy`;
+  
+  list.innerHTML = state.outputs.map(o => 
+    `<div class="download-item">
+      <a class="download-btn" href="${o.url}" download="${o.name}">⬇ Tải ${o.name} (${(o.size/1024/1024).toFixed(1)} MB)</a>
+      <audio controls src="${o.url}"></audio>
+    </div>`
+  ).join('');
+}
+
+// ==================== AUTOCHAT ====================
+// Prompt template (matching original)
+const AUTOCHAT_TEMPLATE = `Chào, hãy đọc toàn bộ nội dung tôi đã training bạn ở trên, từ đó tự xác định: kịch bản này thuộc thể loại gì, lấy bối cảnh nào, giọng kể ra sao và xoay quanh hai nhân vật trung tâm nào. Đây là tiêu đề mà tôi muốn làm nội dung video YouTube dạng câu chuyện, hãy ghi nhớ chính xác tiêu đề này để dùng cho toàn bộ các lệnh phía sau: [MAP]. Từ tiêu đề vừa rồi, viết cho tôi sườn ý 9 phần để viết truyện, đặt tên nhân vật ngẫu nhiên nhưng phải phù hợp với bối cảnh và thể loại mà tiêu đề cùng nội dung training đã xác định; sau đó hãy sáng tạo ra một sườn ý mới có cấu trúc hấp dẫn hơn và dùng sườn ý mới này để chuẩn bị viết content. Sườn ý phải bảo đảm: mỗi phần có một mục tiêu kịch tính riêng, không phần nào lặp lại dạng diễn biến của phần liền trước, độ căng tăng dần từ phần 1 đến phần 8 và phần 9 khép lại trọn vẹn đúng lời hứa của tiêu đề. Trả kết quả ngắn gọn, có nhắc lại tiêu đề trong ngoặc vuông để gây chú ý. Tuyệt đối không đổi tiêu đề mới, phải giữ nguyên tiêu đề cũ, chỉ đổi sườn ý 9 phần. Cung cấp cho bạn, 2 nhân vật chính là da trắng.
+
+VO | Viết phần 1, kể chuyện ở ngôi thứ 1 bám sát 100% tiêu đề và sườn ý 9 phần đã được thống nhất trước đó. Tiêu đề là lời hứa với người xem và có độ ưu tiên tuyệt đối trong toàn bộ câu chuyện. Mọi diễn biến, nhân vật, cảm xúc, xung đột và bước ngoặt đều phải phục vụ trực tiếp cho lời hứa của tiêu đề. Trước khi viết, hãy tự kiểm tra trong nội bộ rằng: nội dung Part này vẫn đang bám trực tiếp vào tiêu đề; hai nhân vật trung tâm xuất hiện trong tiêu đề luôn là động lực chính của câu chuyện và toàn bộ diễn biến phải xoay quanh họ; mỗi sự kiện mới đều làm nổi bật hoặc thúc đẩy lời hứa của tiêu đề; không để bất kỳ tuyến truyện phụ, nhân vật phụ, quá khứ, bí mật gia đình, âm mưu, điều tra, hồi tưởng hoặc twist nào chiếm trọng tâm nếu chúng không trực tiếp phục vụ tiêu đề; nếu phát hiện câu chuyện bắt đầu lệch khỏi tiêu đề hoặc chuyển sang một motif khác thì phải tự điều chỉnh lại trước khi sinh nội dung. Mở đầu bằng đúng một câu hook cực mạnh dưới 20 từ, đặt người xem thẳng vào một khoảnh khắc đang diễn ra, có hình ảnh cụ thể và một câu hỏi ngầm chưa được trả lời; cấm mở bài bằng mô tả thời tiết, bằng bối cảnh chung chung hoặc bằng một câu triết lý. Văn phong bắt buộc điện ảnh: mỗi cảnh phải có ít nhất hai chi tiết giác quan cụ thể như ánh sáng, âm thanh, nhiệt độ, mùi hoặc kết cấu vật liệu, và phải kể bằng hành động, cử chỉ, vật thể, lời thoại thay vì nói thẳng cảm xúc; tuyệt đối không dùng câu tổng kết cảm xúc kiểu cô ấy rất buồn hay anh ta rất sợ hãi, mà phải để người xem tự cảm nhận qua chi tiết cụ thể. Giữ đúng không khí thể loại đã được xác định từ tiêu đề và nội dung training: mọi bối cảnh, đồ vật, thuật ngữ, nghề nghiệp, quy tắc xã hội và cách nhân vật ứng xử phải nhất quán với thế giới đã thiết lập ở các phần trước, không đưa vào bất kỳ chi tiết nào trái với thế giới đó. Câu văn dài ngắn xen kẽ có nhịp, đọc voice-over lên phải nghe mượt và tự nhiên. Toàn bộ phần 1 trả kết quả khoảng 550 từ. Mỗi Part phải kết thúc bằng một bước tiến mới làm tăng sự tò mò và thúc đẩy trực tiếp lời hứa của tiêu đề. Không viết trên Canvas. Trả kết quả bằng tiếng Anh, phù hợp văn hóa Mỹ, sử dụng đơn vị đo lường của Mỹ. Tuyệt đối không được mô tả bạo lực đồ họa, không được gợi dục, và nếu có yếu tố tình cảm thì phải đảm bảo phù hợp với chính sách nội dung của YouTube. Văn phong phải được viết để voice-over đọc liền mạch như một câu chuyện điện ảnh, không có ghi chú biên tập, không có lời giải thích và không có meta. Trả kết quả trong một khối văn bản duy nhất, không được xuống dòng, không được chia đoạn, không được tự format, không được tạo tiêu đề, nhãn, số thứ tự hoặc chú thích. Không được trả về code, JSON, VB.NET, SQL hoặc bất kỳ định dạng kỹ thuật nào. Không được thêm lời mở đầu, không được thêm lời kết, không CTA, không hỏi lại, không gợi ý và không chú thích. Chỉ xuất ra đúng nội dung truyện thuần túy và không thêm bất kỳ dòng nào khác.
+
+VO | Viết phần 2 bám sát 100% tiêu đề và sườn ý 9 phần đã được thống nhất trước đó. Tiêu đề là lời hứa với người xem và có độ ưu tiên tuyệt đối trong toàn bộ câu chuyện. Mọi diễn biến, nhân vật, cảm xúc, xung đột và bước ngoặt đều phải phục vụ trực tiếp cho lời hứa của tiêu đề. Trước khi viết, hãy tự kiểm tra trong nội bộ rằng: nội dung Part này vẫn đang bám trực tiếp vào tiêu đề; hai nhân vật trung tâm xuất hiện trong tiêu đề luôn là động lực chính của câu chuyện và toàn bộ diễn biến phải xoay quanh họ; mỗi sự kiện mới đều làm nổi bật hoặc thúc đẩy lời hứa của tiêu đề; không để bất kỳ tuyến truyện phụ, nhân vật phụ, quá khứ, bí mật gia đình, âm mưu, điều tra, hồi tưởng hoặc twist nào chiếm trọng tâm nếu chúng không trực tiếp phục vụ tiêu đề; nếu phát hiện câu chuyện bắt đầu lệch khỏi tiêu đề hoặc chuyển sang một motif khác thì phải tự điều chỉnh lại trước khi sinh nội dung. Nếu có bất kỳ xung đột nào giữa nội dung đã viết trước đó với tiêu đề hoặc sườn ý đã thống nhất thì luôn ưu tiên tiêu đề và sườn ý, đồng thời tự điều chỉnh diễn biến tiếp theo để đưa câu chuyện quay trở lại đúng hướng mà không làm đứt mạch kể chuyện. Tuyệt đối không được nhắc lại tiêu đề như phần 1. Tiếp nối phần 1, nhớ đồng nhất nhân vật, tên riêng, bối cảnh, đồ vật và tuyến thời gian cho phù hợp. Văn phong bắt buộc điện ảnh: mỗi cảnh phải có ít nhất hai chi tiết giác quan cụ thể như ánh sáng, âm thanh, nhiệt độ, mùi hoặc kết cấu vật liệu, và phải kể bằng hành động, cử chỉ, vật thể, lời thoại thay vì nói thẳng cảm xúc; tuyệt đối không dùng câu tổng kết cảm xúc kiểu cô ấy rất buồn hay anh ta rất sợ hãi, mà phải để người xem tự cảm nhận qua chi tiết cụ thể. Giữ đúng không khí thể loại đã được xác định từ tiêu đề và nội dung training: mọi bối cảnh, đồ vật, thuật ngữ, nghề nghiệp, quy tắc xã hội và cách nhân vật ứng xử phải nhất quán với thế giới đã thiết lập ở các phần trước, không đưa vào bất kỳ chi tiết nào trái với thế giới đó. Câu văn dài ngắn xen kẽ có nhịp, đọc voice-over lên phải nghe mượt và tự nhiên. Kiểm soát nhịp kể: không được lặp lại cùng một dạng diễn biến với các phần trước, đặc biệt không dùng lại mô-típ nhân vật phát hiện thêm một bí mật hoặc một manh mối mới nếu phần liền trước đã dùng. Kiểu kết mở của mỗi phần phải luân phiên và khác nhau, chọn một trong các dạng: một lời đề nghị hoặc tối hậu thư, một quyết định dứt khoát, một mất mát, một lời thú nhận, một cuộc đối đầu trực diện, một hạn chót siết lại, một đảo chiều quyền lực. Mỗi phần phải có ít nhất một cảnh nhân vật hành động và làm thay đổi tình thế, không được chỉ suy nghĩ, quan sát hoặc trò chuyện suốt cả phần. Toàn bộ phần 2 trả kết quả khoảng 550 từ. Mỗi Part phải kết thúc bằng một bước tiến mới làm tăng sự tò mò và thúc đẩy trực tiếp lời hứa của tiêu đề. Không viết trên Canvas. Trả kết quả bằng tiếng Anh, phù hợp văn hóa Mỹ, sử dụng đơn vị đo lường của Mỹ. Tuyệt đối không được mô tả bạo lực đồ họa, không được gợi dục, và nếu có yếu tố tình cảm thì phải đảm bảo phù hợp với chính sách nội dung của YouTube. Văn phong phải được viết để voice-over đọc liền mạch như một câu chuyện điện ảnh, không có ghi chú biên tập, không có lời giải thích và không có meta. Trả kết quả trong một khối văn bản duy nhất, không được xuống dòng, không được chia đoạn, không được tự format, không được tạo tiêu đề, nhãn, số thứ tự hoặc chú thích. Không được trả về code, JSON, VB.NET, SQL hoặc bất kỳ định dạng kỹ thuật nào. Không được thêm lời mở đầu, không được thêm lời kết, không CTA, không hỏi lại, không gợi ý và không chú thích. Chỉ xuất ra đúng nội dung truyện thuần túy và không thêm bất kỳ dòng nào khác.
+
+VO | Viết phần 3 bám sát 100% tiêu đề và sườn ý 9 phần đã được thống nhất trước đó. Tiêu đề là lời hứa với người xem và có độ ưu tiên tuyệt đối trong toàn bộ câu chuyện. Mọi diễn biến, nhân vật, cảm xúc, xung đột và bước ngoặt đều phải phục vụ trực tiếp cho lời hứa của tiêu đề. Trước khi viết, hãy tự kiểm tra trong nội bộ rằng: nội dung Part này vẫn đang bám trực tiếp vào tiêu đề; hai nhân vật trung tâm xuất hiện trong tiêu đề luôn là động lực chính của câu chuyện và toàn bộ diễn biến phải xoay quanh họ; mỗi sự kiện mới đều làm nổi bật hoặc thúc đẩy lời hứa của tiêu đề; không để bất kỳ tuyến truyện phụ, nhân vật phụ, quá khứ, bí mật gia đình, âm mưu, điều tra, hồi tưởng hoặc twist nào chiếm trọng tâm nếu chúng không trực tiếp phục vụ tiêu đề; nếu phát hiện câu chuyện bắt đầu lệch khỏi tiêu đề hoặc chuyển sang một motif khác thì phải tự điều chỉnh lại trước khi sinh nội dung. Nếu có bất kỳ xung đột nào giữa nội dung đã viết trước đó với tiêu đề hoặc sườn ý đã thống nhất thì luôn ưu tiên tiêu đề và sườn ý, đồng thời tự điều chỉnh diễn biến tiếp theo để đưa câu chuyện quay trở lại đúng hướng mà không làm đứt mạch kể chuyện. Tuyệt đối không được nhắc lại tiêu đề như phần 1. Tiếp nối phần 2, nhớ đồng nhất nhân vật, tên riêng, bối cảnh, đồ vật và tuyến thời gian cho phù hợp. Văn phong bắt buộc điện ảnh: mỗi cảnh phải có ít nhất hai chi tiết giác quan cụ thể như ánh sáng, âm thanh, nhiệt độ, mùi hoặc kết cấu vật liệu, và phải kể bằng hành động, cử chỉ, vật thể, lời thoại thay vì nói thẳng cảm xúc; tuyệt đối không dùng câu tổng kết cảm xúc kiểu cô ấy rất buồn hay anh ta rất sợ hãi, mà phải để người xem tự cảm nhận qua chi tiết cụ thể. Giữ đúng không khí thể loại đã được xác định từ tiêu đề và nội dung training: mọi bối cảnh, đồ vật, thuật ngữ, nghề nghiệp, quy tắc xã hội và cách nhân vật ứng xử phải nhất quán với thế giới đã thiết lập ở các phần trước, không đưa vào bất kỳ chi tiết nào trái với thế giới đó. Câu văn dài ngắn xen kẽ có nhịp, đọc voice-over lên phải nghe mượt và tự nhiên. Kiểm soát nhịp kể: không được lặp lại cùng một dạng diễn biến với các phần trước, đặc biệt không dùng lại mô-típ nhân vật phát hiện thêm một bí mật hoặc một manh mối mới nếu phần liền trước đã dùng. Kiểu kết mở của mỗi phần phải luân phiên và khác nhau, chọn một trong các dạng: một lời đề nghị hoặc tối hậu thư, một quyết định dứt khoát, một mất mát, một lời thú nhận, một cuộc đối đầu trực diện, một hạn chót siết lại, một đảo chiều quyền lực. Mỗi phần phải có ít nhất một cảnh nhân vật hành động và làm thay đổi tình thế, không được chỉ suy nghĩ, quan sát hoặc trò chuyện suốt cả phần. Toàn bộ phần 3 trả kết quả khoảng 550 từ. Mỗi Part phải kết thúc bằng một bước tiến mới làm tăng sự tò mò và thúc đẩy trực tiếp lời hứa của tiêu đề. Không viết trên Canvas. Trả kết quả bằng tiếng Anh, phù hợp văn hóa Mỹ, sử dụng đơn vị đo lường của Mỹ. Tuyệt đối không được mô tả bạo lực đồ họa, không được gợi dục, và nếu có yếu tố tình cảm thì phải đảm bảo phù hợp với chính sách nội dung của YouTube. Văn phong phải được viết để voice-over đọc liền mạch như một câu chuyện điện ảnh, không có ghi chú biên tập, không có lời giải thích và không có meta. Trả kết quả trong một khối văn bản duy nhất, không được xuống dòng, không được chia đoạn, không được tự format, không được tạo tiêu đề, nhãn, số thứ tự hoặc chú thích. Không được trả về code, JSON, VB.NET, SQL hoặc bất kỳ định dạng kỹ thuật nào. Không được thêm lời mở đầu, không được thêm lời kết, không CTA, không hỏi lại, không gợi ý và không chú thích. Chỉ xuất ra đúng nội dung truyện thuần túy và không thêm bất kỳ dòng nào khác.
+
+VO | Viết phần 4 bám sát 100% tiêu đề và sườn ý 9 phần đã được thống nhất trước đó. Tiêu đề là lời hứa với người xem và có độ ưu tiên tuyệt đối trong toàn bộ câu chuyện. Mọi diễn biến, nhân vật, cảm xúc, xung đột và bước ngoặt đều phải phục vụ trực tiếp cho lời hứa của tiêu đề. Trước khi viết, hãy tự kiểm tra trong nội bộ rằng: nội dung Part này vẫn đang bám trực tiếp vào tiêu đề; hai nhân vật trung tâm xuất hiện trong tiêu đề luôn là động lực chính của câu chuyện và toàn bộ diễn biến phải xoay quanh họ; mỗi sự kiện mới đều làm nổi bật hoặc thúc đẩy lời hứa của tiêu đề; không để bất kỳ tuyến truyện phụ, nhân vật phụ, quá khứ, bí mật gia đình, âm mưu, điều tra, hồi tưởng hoặc twist nào chiếm trọng tâm nếu chúng không trực tiếp phục vụ tiêu đề; nếu phát hiện câu chuyện bắt đầu lệch khỏi tiêu đề hoặc chuyển sang một motif khác thì phải tự điều chỉnh lại trước khi sinh nội dung. Nếu có bất kỳ xung đột nào giữa nội dung đã viết trước đó với tiêu đề hoặc sườn ý đã thống nhất thì luôn ưu tiên tiêu đề và sườn ý, đồng thời tự điều chỉnh diễn biến tiếp theo để đưa câu chuyện quay trở lại đúng hướng mà không làm đứt mạch kể chuyện. Tuyệt đối không được nhắc lại tiêu đề như phần 1. Tiếp nối phần 3, nhớ đồng nhất nhân vật, tên riêng, bối cảnh, đồ vật và tuyến thời gian cho phù hợp. Văn phong bắt buộc điện ảnh: mỗi cảnh phải có ít nhất hai chi tiết giác quan cụ thể như ánh sáng, âm thanh, nhiệt độ, mùi hoặc kết cấu vật liệu, và phải kể bằng hành động, cử chỉ, vật thể, lời thoại thay vì nói thẳng cảm xúc; tuyệt đối không dùng câu tổng kết cảm xúc kiểu cô ấy rất buồn hay anh ta rất sợ hãi, mà phải để người xem tự cảm nhận qua chi tiết cụ thể. Giữ đúng không khí thể loại đã được xác định từ tiêu đề và nội dung training: mọi bối cảnh, đồ vật, thuật ngữ, nghề nghiệp, quy tắc xã hội và cách nhân vật ứng xử phải nhất quán với thế giới đã thiết lập ở các phần trước, không đưa vào bất kỳ chi tiết nào trái với thế giới đó. Câu văn dài ngắn xen kẽ có nhịp, đọc voice-over lên phải nghe mượt và tự nhiên. Kiểm soát nhịp kể: không được lặp lại cùng một dạng diễn biến với các phần trước, đặc biệt không dùng lại mô-típ nhân vật phát hiện thêm một bí mật hoặc một manh mối mới nếu phần liền trước đã dùng. Kiểu kết mở của mỗi phần phải luân phiên và khác nhau, chọn một trong các dạng: một lời đề nghị hoặc tối hậu thư, một quyết định dứt khoát, một mất mát, một lời thú nhận, một cuộc đối đầu trực diện, một hạn chót siết lại, một đảo chiều quyền lực. Mỗi phần phải có ít nhất một cảnh nhân vật hành động và làm thay đổi tình thế, không được chỉ suy nghĩ, quan sát hoặc trò chuyện suốt cả phần. Toàn bộ phần 4 trả kết quả khoảng 550 từ. Mỗi Part phải kết thúc bằng một bước tiến mới làm tăng sự tò mò và thúc đẩy trực tiếp lời hứa của tiêu đề. Không viết trên Canvas. Trả kết quả bằng tiếng Anh, phù hợp văn hóa Mỹ, sử dụng đơn vị đo lường của Mỹ. Tuyệt đối không được mô tả bạo lực đồ họa, không được gợi dục, và nếu có yếu tố tình cảm thì phải đảm bảo phù hợp với chính sách nội dung của YouTube. Văn phong phải được viết để voice-over đọc liền mạch như một câu chuyện điện ảnh, không có ghi chú biên tập, không có lời giải thích và không có meta. Trả kết quả trong một khối văn bản duy nhất, không được xuống dòng, không được chia đoạn, không được tự format, không được tạo tiêu đề, nhãn, số thứ tự hoặc chú thích. Không được trả về code, JSON, VB.NET, SQL hoặc bất kỳ định dạng kỹ thuật nào. Không được thêm lời mở đầu, không được thêm lời kết, không CTA, không hỏi lại, không gợi ý và không chú thích. Chỉ xuất ra đúng nội dung truyện thuần túy và không thêm bất kỳ dòng nào khác.
+
+VO | Viết phần 5 bám sát 100% tiêu đề và sườn ý 9 phần đã được thống nhất trước đó. Tiêu đề là lời hứa với người xem và có độ ưu tiên tuyệt đối trong toàn bộ câu chuyện. Mọi diễn biến, nhân vật, cảm xúc, xung đột và bước ngoặt đều phải phục vụ trực tiếp cho lời hứa của tiêu đề. Trước khi viết, hãy tự kiểm tra trong nội bộ rằng: nội dung Part này vẫn đang bám trực tiếp vào tiêu đề; hai nhân vật trung tâm xuất hiện trong tiêu đề luôn là động lực chính của câu chuyện và toàn bộ diễn biến phải xoay quanh họ; mỗi sự kiện mới đều làm nổi bật hoặc thúc đẩy lời hứa của tiêu đề; không để bất kỳ tuyến truyện phụ, nhân vật phụ, quá khứ, bí mật gia đình, âm mưu, điều tra, hồi tưởng hoặc twist nào chiếm trọng tâm nếu chúng không trực tiếp phục vụ tiêu đề; nếu phát hiện câu chuyện bắt đầu lệch khỏi tiêu đề hoặc chuyển sang một motif khác thì phải tự điều chỉnh lại trước khi sinh nội dung. Nếu có bất kỳ xung đột nào giữa nội dung đã viết trước đó với tiêu đề hoặc sườn ý đã thống nhất thì luôn ưu tiên tiêu đề và sườn ý, đồng thời tự điều chỉnh diễn biến tiếp theo để đưa câu chuyện quay trở lại đúng hướng mà không làm đứt mạch kể chuyện. Tuyệt đối không được nhắc lại tiêu đề như phần 1. Tiếp nối phần 4, nhớ đồng nhất nhân vật, tên riêng, bối cảnh, đồ vật và tuyến thời gian cho phù hợp. Văn phong bắt buộc điện ảnh: mỗi cảnh phải có ít nhất hai chi tiết giác quan cụ thể như ánh sáng, âm thanh, nhiệt độ, mùi hoặc kết cấu vật liệu, và phải kể bằng hành động, cử chỉ, vật thể, lời thoại thay vì nói thẳng cảm xúc; tuyệt đối không dùng câu tổng kết cảm xúc kiểu cô ấy rất buồn hay anh ta rất sợ hãi, mà phải để người xem tự cảm nhận qua chi tiết cụ thể. Giữ đúng không khí thể loại đã được xác định từ tiêu đề và nội dung training: mọi bối cảnh, đồ vật, thuật ngữ, nghề nghiệp, quy tắc xã hội và cách nhân vật ứng xử phải nhất quán với thế giới đã thiết lập ở các phần trước, không đưa vào bất kỳ chi tiết nào trái với thế giới đó. Câu văn dài ngắn xen kẽ có nhịp, đọc voice-over lên phải nghe mượt và tự nhiên. Kiểm soát nhịp kể: không được lặp lại cùng một dạng diễn biến với các phần trước, đặc biệt không dùng lại mô-típ nhân vật phát hiện thêm một bí mật hoặc một manh mối mới nếu phần liền trước đã dùng. Kiểu kết mở của mỗi phần phải luân phiên và khác nhau, chọn một trong các dạng: một lời đề nghị hoặc tối hậu thư, một quyết định dứt khoát, một mất mát, một lời thú nhận, một cuộc đối đầu trực diện, một hạn chót siết lại, một đảo chiều quyền lực. Mỗi phần phải có ít nhất một cảnh nhân vật hành động và làm thay đổi tình thế, không được chỉ suy nghĩ, quan sát hoặc trò chuyện suốt cả phần. Toàn bộ phần 5 trả kết quả khoảng 550 từ. Mỗi Part phải kết thúc bằng một bước tiến mới làm tăng sự tò mò và thúc đẩy trực tiếp lời hứa của tiêu đề. Không viết trên Canvas. Trả kết quả bằng tiếng Anh, phù hợp văn hóa Mỹ, sử dụng đơn vị đo lường của Mỹ. Tuyệt đối không được mô tả bạo lực đồ họa, không được gợi dục, và nếu có yếu tố tình cảm thì phải đảm bảo phù hợp với chính sách nội dung của YouTube. Văn phong phải được viết để voice-over đọc liền mạch như một câu chuyện điện ảnh, không có ghi chú biên tập, không có lời giải thích và không có meta. Trả kết quả trong một khối văn bản duy nhất, không được xuống dòng, không được chia đoạn, không được tự format, không được tạo tiêu đề, nhãn, số thứ tự hoặc chú thích. Không được trả về code, JSON, VB.NET, SQL hoặc bất kỳ định dạng kỹ thuật nào. Không được thêm lời mở đầu, không được thêm lời kết, không CTA, không hỏi lại, không gợi ý và không chú thích. Chỉ xuất ra đúng nội dung truyện thuần túy và không thêm bất kỳ dòng nào khác.
+
+VO | Viết phần 6 bám sát 100% tiêu đề và sườn ý 9 phần đã được thống nhất trước đó. Tiêu đề là lời hứa với người xem và có độ ưu tiên tuyệt đối trong toàn bộ câu chuyện. Mọi diễn biến, nhân vật, cảm xúc, xung đột và bước ngoặt đều phải phục vụ trực tiếp cho lời hứa của tiêu đề. Trước khi viết, hãy tự kiểm tra trong nội bộ rằng: nội dung Part này vẫn đang bám trực tiếp vào tiêu đề; hai nhân vật trung tâm xuất hiện trong tiêu đề luôn là động lực chính của câu chuyện và toàn bộ diễn biến phải xoay quanh họ; mỗi sự kiện mới đều làm nổi bật hoặc thúc đẩy lời hứa của tiêu đề; không để bất kỳ tuyến truyện phụ, nhân vật phụ, quá khứ, bí mật gia đình, âm mưu, điều tra, hồi tưởng hoặc twist nào chiếm trọng tâm nếu chúng không trực tiếp phục vụ tiêu đề; nếu phát hiện câu chuyện bắt đầu lệch khỏi tiêu đề hoặc chuyển sang một motif khác thì phải tự điều chỉnh lại trước khi sinh nội dung. Nếu có bất kỳ xung đột nào giữa nội dung đã viết trước đó với tiêu đề hoặc sườn ý đã thống nhất thì luôn ưu tiên tiêu đề và sườn ý, đồng thời tự điều chỉnh diễn biến tiếp theo để đưa câu chuyện quay trở lại đúng hướng mà không làm đứt mạch kể chuyện. Tuyệt đối không được nhắc lại tiêu đề như phần 1. Tiếp nối phần 5, nhớ đồng nhất nhân vật, tên riêng, bối cảnh, đồ vật và tuyến thời gian cho phù hợp. Văn phong bắt buộc điện ảnh: mỗi cảnh phải có ít nhất hai chi tiết giác quan cụ thể như ánh sáng, âm thanh, nhiệt độ, mùi hoặc kết cấu vật liệu, và phải kể bằng hành động, cử chỉ, vật thể, lời thoại thay vì nói thẳng cảm xúc; tuyệt đối không dùng câu tổng kết cảm xúc kiểu cô ấy rất buồn hay anh ta rất sợ hãi, mà phải để người xem tự cảm nhận qua chi tiết cụ thể. Giữ đúng không khí thể loại đã được xác định từ tiêu đề và nội dung training: mọi bối cảnh, đồ vật, thuật ngữ, nghề nghiệp, quy tắc xã hội và cách nhân vật ứng xử phải nhất quán với thế giới đã thiết lập ở các phần trước, không đưa vào bất kỳ chi tiết nào trái với thế giới đó. Câu văn dài ngắn xen kẽ có nhịp, đọc voice-over lên phải nghe mượt và tự nhiên. Kiểm soát nhịp kể: không được lặp lại cùng một dạng diễn biến với các phần trước, đặc biệt không dùng lại mô-típ nhân vật phát hiện thêm một bí mật hoặc một manh mối mới nếu phần liền trước đã dùng. Kiểu kết mở của mỗi phần phải luân phiên và khác nhau, chọn một trong các dạng: một lời đề nghị hoặc tối hậu thư, một quyết định dứt khoát, một mất mát, một lời thú nhận, một cuộc đối đầu trực diện, một hạn chót siết lại, một đảo chiều quyền lực. Mỗi phần phải có ít nhất một cảnh nhân vật hành động và làm thay đổi tình thế, không được chỉ suy nghĩ, quan sát hoặc trò chuyện suốt cả phần. Toàn bộ phần 6 trả kết quả khoảng 550 từ. Mỗi Part phải kết thúc bằng một bước tiến mới làm tăng sự tò mò và thúc đẩy trực tiếp lời hứa của tiêu đề. Không viết trên Canvas. Trả kết quả bằng tiếng Anh, phù hợp văn hóa Mỹ, sử dụng đơn vị đo lường của Mỹ. Tuyệt đối không được mô tả bạo lực đồ họa, không được gợi dục, và nếu có yếu tố tình cảm thì phải đảm bảo phù hợp với chính sách nội dung của YouTube. Văn phong phải được viết để voice-over đọc liền mạch như một câu chuyện điện ảnh, không có ghi chú biên tập, không có lời giải thích và không có meta. Trả kết quả trong một khối văn bản duy nhất, không được xuống dòng, không được chia đoạn, không được tự format, không được tạo tiêu đề, nhãn, số thứ tự hoặc chú thích. Không được trả về code, JSON, VB.NET, SQL hoặc bất kỳ định dạng kỹ thuật nào. Không được thêm lời mở đầu, không được thêm lời kết, không CTA, không hỏi lại, không gợi ý và không chú thích. Chỉ xuất ra đúng nội dung truyện thuần túy và không thêm bất kỳ dòng nào khác.
+
+VO | Viết phần 7 bám sát 100% tiêu đề và sườn ý 9 phần đã được thống nhất trước đó. Tiêu đề là lời hứa với người xem và có độ ưu tiên tuyệt đối trong toàn bộ câu chuyện. Mọi diễn biến, nhân vật, cảm xúc, xung đột và bước ngoặt đều phải phục vụ trực tiếp cho lời hứa của tiêu đề. Trước khi viết, hãy tự kiểm tra trong nội bộ rằng: nội dung Part này vẫn đang bám trực tiếp vào tiêu đề; hai nhân vật trung tâm xuất hiện trong tiêu đề luôn là động lực chính của câu chuyện và toàn bộ diễn biến phải xoay quanh họ; mỗi sự kiện mới đều làm nổi bật hoặc thúc đẩy lời hứa của tiêu đề; không để bất kỳ tuyến truyện phụ, nhân vật phụ, quá khứ, bí mật gia đình, âm mưu, điều tra, hồi tưởng hoặc twist nào chiếm trọng tâm nếu chúng không trực tiếp phục vụ tiêu đề; nếu phát hiện câu chuyện bắt đầu lệch khỏi tiêu đề hoặc chuyển sang một motif khác thì phải tự điều chỉnh lại trước khi sinh nội dung. Nếu có bất kỳ xung đột nào giữa nội dung đã viết trước đó với tiêu đề hoặc sườn ý đã thống nhất thì luôn ưu tiên tiêu đề và sườn ý, đồng thời tự điều chỉnh diễn biến tiếp theo để đưa câu chuyện quay trở lại đúng hướng mà không làm đứt mạch kể chuyện. Tuyệt đối không được nhắc lại tiêu đề như phần 1. Tiếp nối phần 6, nhớ đồng nhất nhân vật, tên riêng, bối cảnh, đồ vật và tuyến thời gian cho phù hợp. Văn phong bắt buộc điện ảnh: mỗi cảnh phải có ít nhất hai chi tiết giác quan cụ thể như ánh sáng, âm thanh, nhiệt độ, mùi hoặc kết cấu vật liệu, và phải kể bằng hành động, cử chỉ, vật thể, lời thoại thay vì nói thẳng cảm xúc; tuyệt đối không dùng câu tổng kết cảm xúc kiểu cô ấy rất buồn hay anh ta rất sợ hãi, mà phải để người xem tự cảm nhận qua chi tiết cụ thể. Giữ đúng không khí thể loại đã được xác định từ tiêu đề và nội dung training: mọi bối cảnh, đồ vật, thuật ngữ, nghề nghiệp, quy tắc xã hội và cách nhân vật ứng xử phải nhất quán với thế giới đã thiết lập ở các phần trước, không đưa vào bất kỳ chi tiết nào trái với thế giới đó. Câu văn dài ngắn xen kẽ có nhịp, đọc voice-over lên phải nghe mượt và tự nhiên. Kiểm soát nhịp kể: không được lặp lại cùng một dạng diễn biến với các phần trước, đặc biệt không dùng lại mô-típ nhân vật phát hiện thêm một bí mật hoặc một manh mối mới nếu phần liền trước đã dùng. Kiểu kết mở của mỗi phần phải luân phiên và khác nhau, chọn một trong các dạng: một lời đề nghị hoặc tối hậu thư, một quyết định dứt khoát, một mất mát, một lời thú nhận, một cuộc đối đầu trực diện, một hạn chót siết lại, một đảo chiều quyền lực. Mỗi phần phải có ít nhất một cảnh nhân vật hành động và làm thay đổi tình thế, không được chỉ suy nghĩ, quan sát hoặc trò chuyện suốt cả phần. Toàn bộ phần 7 trả kết quả khoảng 550 từ. Mỗi Part phải kết thúc bằng một bước tiến mới làm tăng sự tò mò và thúc đẩy trực tiếp lời hứa của tiêu đề. Không viết trên Canvas. Trả kết quả bằng tiếng Anh, phù hợp văn hóa Mỹ, sử dụng đơn vị đo lường của Mỹ. Tuyệt đối không được mô tả bạo lực đồ họa, không được gợi dục, và nếu có yếu tố tình cảm thì phải đảm bảo phù hợp với chính sách nội dung của YouTube. Văn phong phải được viết để voice-over đọc liền mạch như một câu chuyện điện ảnh, không có ghi chú biên tập, không có lời giải thích và không có meta. Trả kết quả trong một khối văn bản duy nhất, không được xuống dòng, không được chia đoạn, không được tự format, không được tạo tiêu đề, nhãn, số thứ tự hoặc chú thích. Không được trả về code, JSON, VB.NET, SQL hoặc bất kỳ định dạng kỹ thuật nào. Không được thêm lời mở đầu, không được thêm lời kết, không CTA, không hỏi lại, không gợi ý và không chú thích. Chỉ xuất ra đúng nội dung truyện thuần túy và không thêm bất kỳ dòng nào khác.
+
+VO | Viết phần 8 bám sát 100% tiêu đề và sườn ý 9 phần đã được thống nhất trước đó. Tiêu đề là lời hứa với người xem và có độ ưu tiên tuyệt đối trong toàn bộ câu chuyện. Mọi diễn biến, nhân vật, cảm xúc, xung đột và bước ngoặt đều phải phục vụ trực tiếp cho lời hứa của tiêu đề. Trước khi viết, hãy tự kiểm tra trong nội bộ rằng: nội dung Part này vẫn đang bám trực tiếp vào tiêu đề; hai nhân vật trung tâm xuất hiện trong tiêu đề luôn là động lực chính của câu chuyện và toàn bộ diễn biến phải xoay quanh họ; mỗi sự kiện mới đều làm nổi bật hoặc thúc đẩy lời hứa của tiêu đề; không để bất kỳ tuyến truyện phụ, nhân vật phụ, quá khứ, bí mật gia đình, âm mưu, điều tra, hồi tưởng hoặc twist nào chiếm trọng tâm nếu chúng không trực tiếp phục vụ tiêu đề; nếu phát hiện câu chuyện bắt đầu lệch khỏi tiêu đề hoặc chuyển sang một motif khác thì phải tự điều chỉnh lại trước khi sinh nội dung. Nếu có bất kỳ xung đột nào giữa nội dung đã viết trước đó với tiêu đề hoặc sườn ý đã thống nhất thì luôn ưu tiên tiêu đề và sườn ý, đồng thời tự điều chỉnh diễn biến tiếp theo để đưa câu chuyện quay trở lại đúng hướng mà không làm đứt mạch kể chuyện. Tuyệt đối không được nhắc lại tiêu đề như phần 1. Tiếp nối phần 7, nhớ đồng nhất nhân vật, tên riêng, bối cảnh, đồ vật và tuyến thời gian cho phù hợp. Văn phong bắt buộc điện ảnh: mỗi cảnh phải có ít nhất hai chi tiết giác quan cụ thể như ánh sáng, âm thanh, nhiệt độ, mùi hoặc kết cấu vật liệu, và phải kể bằng hành động, cử chỉ, vật thể, lời thoại thay vì nói thẳng cảm xúc; tuyệt đối không dùng câu tổng kết cảm xúc kiểu cô ấy rất buồn hay anh ta rất sợ hãi, mà phải để người xem tự cảm nhận qua chi tiết cụ thể. Giữ đúng không khí thể loại đã được xác định từ tiêu đề và nội dung training: mọi bối cảnh, đồ vật, thuật ngữ, nghề nghiệp, quy tắc xã hội và cách nhân vật ứng xử phải nhất quán với thế giới đã thiết lập ở các phần trước, không đưa vào bất kỳ chi tiết nào trái với thế giới đó. Câu văn dài ngắn xen kẽ có nhịp, đọc voice-over lên phải nghe mượt và tự nhiên. Kiểm soát nhịp kể: không được lặp lại cùng một dạng diễn biến với các phần trước, đặc biệt không dùng lại mô-típ nhân vật phát hiện thêm một bí mật hoặc một manh mối mới nếu phần liền trước đã dùng. Kiểu kết mở của mỗi phần phải luân phiên và khác nhau, chọn một trong các dạng: một lời đề nghị hoặc tối hậu thư, một quyết định dứt khoát, một mất mát, một lời thú nhận, một cuộc đối đầu trực diện, một hạn chót siết lại, một đảo chiều quyền lực. Mỗi phần phải có ít nhất một cảnh nhân vật hành động và làm thay đổi tình thế, không được chỉ suy nghĩ, quan sát hoặc trò chuyện suốt cả phần. Toàn bộ phần 8 trả kết quả khoảng 550 từ. Mỗi Part phải kết thúc bằng một bước tiến mới làm tăng sự tò mò và thúc đẩy trực tiếp lời hứa của tiêu đề. Không viết trên Canvas. Trả kết quả bằng tiếng Anh, phù hợp văn hóa Mỹ, sử dụng đơn vị đo lường của Mỹ. Tuyệt đối không được mô tả bạo lực đồ họa, không được gợi dục, và nếu có yếu tố tình cảm thì phải đảm bảo phù hợp với chính sách nội dung của YouTube. Văn phong phải được viết để voice-over đọc liền mạch như một câu chuyện điện ảnh, không có ghi chú biên tập, không có lời giải thích và không có meta. Trả kết quả trong một khối văn bản duy nhất, không được xuống dòng, không được chia đoạn, không được tự format, không được tạo tiêu đề, nhãn, số thứ tự hoặc chú thích. Không được trả về code, JSON, VB.NET, SQL hoặc bất kỳ định dạng kỹ thuật nào. Không được thêm lời mở đầu, không được thêm lời kết, không CTA, không hỏi lại, không gợi ý và không chú thích. Chỉ xuất ra đúng nội dung truyện thuần túy và không thêm bất kỳ dòng nào khác.
+
+VO | Viết phần 9 bám sát 100% tiêu đề và sườn ý 9 phần đã được thống nhất trước đó. Tiêu đề là lời hứa với người xem và có độ ưu tiên tuyệt đối trong toàn bộ câu chuyện. Mọi diễn biến, nhân vật, cảm xúc, xung đột và bước ngoặt đều phải phục vụ trực tiếp cho lời hứa của tiêu đề. Trước khi viết, hãy tự kiểm tra trong nội bộ rằng: nội dung Part này vẫn đang bám trực tiếp vào tiêu đề; hai nhân vật trung tâm xuất hiện trong tiêu đề luôn là động lực chính của câu chuyện và toàn bộ diễn biến phải xoay quanh họ; mỗi sự kiện mới đều làm nổi bật hoặc thúc đẩy lời hứa của tiêu đề; không để bất kỳ tuyến truyện phụ, nhân vật phụ, quá khứ, bí mật gia đình, âm mưu, điều tra, hồi tưởng hoặc twist nào chiếm trọng tâm nếu chúng không trực tiếp phục vụ tiêu đề; nếu phát hiện câu chuyện bắt đầu lệch khỏi tiêu đề hoặc chuyển sang một motif khác thì phải tự điều chỉnh lại trước khi sinh nội dung. Nếu có bất kỳ xung đột nào giữa nội dung đã viết trước đó với tiêu đề hoặc sườn ý đã thống nhất thì luôn ưu tiên tiêu đề và sườn ý, đồng thời tự điều chỉnh diễn biến tiếp theo để đưa câu chuyện quay trở lại đúng hướng mà không làm đứt mạch kể chuyện. Tuyệt đối không được nhắc lại tiêu đề như phần 1. Tiếp nối phần 8, nhớ đồng nhất nhân vật, tên riêng, bối cảnh, đồ vật và tuyến thời gian cho phù hợp. Văn phong bắt buộc điện ảnh: mỗi cảnh phải có ít nhất hai chi tiết giác quan cụ thể như ánh sáng, âm thanh, nhiệt độ, mùi hoặc kết cấu vật liệu, và phải kể bằng hành động, cử chỉ, vật thể, lời thoại thay vì nói thẳng cảm xúc; tuyệt đối không dùng câu tổng kết cảm xúc kiểu cô ấy rất buồn hay anh ta rất sợ hãi, mà phải để người xem tự cảm nhận qua chi tiết cụ thể. Giữ đúng không khí thể loại đã được xác định từ tiêu đề và nội dung training: mọi bối cảnh, đồ vật, thuật ngữ, nghề nghiệp, quy tắc xã hội và cách nhân vật ứng xử phải nhất quán với thế giới đã thiết lập ở các phần trước, không đưa vào bất kỳ chi tiết nào trái với thế giới đó. Câu văn dài ngắn xen kẽ có nhịp, đọc voice-over lên phải nghe mượt và tự nhiên. Kiểm soát nhịp kể: không được lặp lại cùng một dạng diễn biến với các phần trước, đặc biệt không dùng lại mô-típ nhân vật phát hiện thêm một bí mật hoặc một manh mối mới nếu phần liền trước đã dùng. Kiểu kết mở của mỗi phần phải luân phiên và khác nhau, chọn một trong các dạng: một lời đề nghị hoặc tối hậu thư, một quyết định dứt khoát, một mất mát, một lời thú nhận, một cuộc đối đầu trực diện, một hạn chót siết lại, một đảo chiều quyền lực. Mỗi phần phải có ít nhất một cảnh nhân vật hành động và làm thay đổi tình thế, không được chỉ suy nghĩ, quan sát hoặc trò chuyện suốt cả phần. Toàn bộ phần 9 trả kết quả khoảng 550 từ. Đây là Part cuối, phải khép lại toàn bộ câu chuyện một cách trọn vẹn, giải quyết đầy đủ các tuyến truyện chính và mang lại một kết thúc thỏa mãn đúng với lời hứa của tiêu đề. Không được mở thêm tuyến truyện lớn hoặc tạo cliffhanger khiến câu chuyện chưa hoàn chỉnh. Phần cuối phải trả lời trọn vẹn đúng lời hứa của tiêu đề, không để lại câu hỏi treo, không mở ra phần tiếp theo, và câu cuối cùng phải là một câu đắt đóng lại toàn bộ hành trình cảm xúc của hai nhân vật trung tâm. Không viết trên Canvas. Trả kết quả bằng tiếng Anh, phù hợp văn hóa Mỹ, sử dụng đơn vị đo lường của Mỹ. Tuyệt đối không được mô tả bạo lực đồ họa, không được gợi dục, và nếu có yếu tố tình cảm thì phải đảm bảo phù hợp với chính sách nội dung của YouTube. Văn phong phải được viết để voice-over đọc liền mạch như một câu chuyện điện ảnh, không có ghi chú biên tập, không có lời giải thích và không có meta. Trả kết quả trong một khối văn bản duy nhất, không được xuống dòng, không được chia đoạn, không được tự format, không được tạo tiêu đề, nhãn, số thứ tự hoặc chú thích. Không được trả về code, JSON, VB.NET, SQL hoặc bất kỳ định dạng kỹ thuật nào. Không được thêm lời mở đầu, không được thêm lời kết, không CTA, không hỏi lại, không gợi ý và không chú thích. Chỉ xuất ra đúng nội dung truyện thuần túy và không thêm bất kỳ dòng nào khác.
+
+SE | Viết cho tôi mô tả khoảng 100 từ chuẩn SEO, hấp dẫn, đúng thể loại của câu chuyện, để làm mô tả cho video với tiêu đề và sườn ý bên trên. Trả kết quả trong một khối văn bản duy nhất, không chia đoạn cho dù văn bản trả ra dài như thế nào đi chăng nữa, và tuyệt đối cũng không được gợi ý gì thêm. Nhắc lại là không trả ra code, json, vbnet, pgsql. Không được xuống dòng. Không được chia đoạn. Không được tạo thêm ngoặc thứ 2. Không được tự format lại. Phải ghép toàn bộ nội dung thành 1 block duy nhất và không được hỏi bất cứ gì thêm, thấy lệnh là trả kết quả. Từ giờ, khi viết bất cứ Part nào, hãy chỉ trả lại nội dung truyện thuần túy, không thêm lời dẫn đầu, không thêm lời kết, không CTA, không hỏi có muốn viết tiếp hay không, không chú thích meta. Chỉ xuất ra đúng đoạn truyện theo phong cách mà tôi yêu cầu, không thêm một dòng nào khác.
+
+TA | GPT, hãy tạo prompt khoảng 40 từ chỉ mô tả bằng chữ, không sinh hình, để tôi copy qua nền tảng khác nhằm tạo được nhân vật chính thứ nhất của câu chuyện, dựa trên gợi ý về tuổi tác, giới tính, trang phục, màu da, vóc dáng và đặc điểm nhận dạng đã xuất hiện ở các lệnh phía trên, và phải đúng với bối cảnh cùng thể loại của kịch bản này. Bắt đầu prompt bằng đúng câu này và cho vào dấu ngoặc vuông. Giữ đầy đủ các kỹ thuật: tuổi phù hợp kịch bản, góc nhìn chính diện, no cartoon, no CGI, no illustration. Toàn bộ mô tả đặt trong một đoạn duy nhất và trong ngoặc vuông. Ghi nhớ số thứ tự nhân vật là 1. Trong prompt phải có từ No cartoon, no cartoon.
+
+TA | GPT, hãy tạo prompt khoảng 40 từ chỉ mô tả bằng chữ, không sinh hình, để tôi copy qua nền tảng khác nhằm tạo được nhân vật chính thứ hai của câu chuyện, dựa trên gợi ý về tuổi tác, giới tính, trang phục, màu da, vóc dáng và những đặc điểm nhận dạng riêng khiến nhân vật này khác biệt rõ với nhân vật số 1, và phải đúng với bối cảnh cùng thể loại của kịch bản này. Bắt đầu prompt bằng đúng câu này và cho vào dấu ngoặc vuông. Giữ đầy đủ các kỹ thuật: tuổi phù hợp kịch bản, góc nhìn chính diện, no cartoon, no CGI, no illustration. Toàn bộ mô tả đặt trong một đoạn duy nhất và trong ngoặc vuông. Ghi nhớ số thứ tự nhân vật là 2. Trong prompt phải có từ No cartoon, no cartoon.`;
+
+const MODELS = {
+  openai: ['gpt-4o-mini', 'gpt-4o', 'gpt-4-turbo', 'gpt-3.5-turbo'],
+  gemini: ['gemini-1.5-flash-latest', 'gemini-1.5-flash', 'gemini-1.5-pro-latest', 'gemini-2.0-flash-exp'],
+};
+const SKIN_TONES = ['da trắng', 'da vàng', 'da ngăm', 'da nâu', 'da đen'];
+const GENDERS = ['nam', 'nữ'];
+
+let autochatQueue = [];
+let autochatRunning = false;
+let autochatStopped = false;
+let niches = [];
+
+function swapCharacters() {
+  const g1 = document.getElementById('char1Gender');
+  const s1 = document.getElementById('char1Skin');
+  const g2 = document.getElementById('char2Gender');
+  const s2 = document.getElementById('char2Skin');
+  [g1.value, g2.value] = [g2.value, g1.value];
+  [s1.value, s2.value] = [s2.value, s1.value];
+  refreshCharLabel();
+}
+
+function refreshCharLabel() {
+  const label = document.getElementById('charConfigLabel');
+  if (label) {
+    label.textContent = `${document.getElementById('char1Gender').value} ${document.getElementById('char1Skin').value} - ${document.getElementById('char2Gender').value} ${document.getElementById('char2Skin').value}`;
+  }
+}
+
+// Auto-refresh char label
+['char1Gender','char1Skin','char2Gender','char2Skin'].forEach(id => {
+  const el = document.getElementById(id);
+  if (el) el.addEventListener('change', refreshCharLabel);
+});
+
+function getCharConfig() {
+  const g1 = document.getElementById('char1Gender').value;
+  const s1 = document.getElementById('char1Skin').value;
+  const g2 = document.getElementById('char2Gender').value;
+  const s2 = document.getElementById('char2Skin').value;
+  return `${g1} ${s1} - ${g2} ${s2}`;
+}
+
+const PRIVATE_NICHES_KEY = 'vm_private_niches_v1';
+
+function loadPrivateNiches() {
+  try {
+    const raw = localStorage.getItem(PRIVATE_NICHES_KEY);
+    return raw ? JSON.parse(raw) : [];
+  } catch (e) { return []; }
+}
+function savePrivateNiches(list) {
+  localStorage.setItem(PRIVATE_NICHES_KEY, JSON.stringify(list));
+}
+
+async function loadNiches() {
+  try {
+    const res = await fetch('/api/autochat/niches');
+    const systemNiches = await res.json();
+    const privateNiches = loadPrivateNiches();
+    niches = [...systemNiches, ...privateNiches];
+
+    const select = document.getElementById('nicheSelect');
+    const sysOnly = systemNiches.filter(n => !n.ownerUserId);
+    const pvtOnly = privateNiches.filter(n => n.ownerUserId);
+
+    let html = '<option value="">— Chọn Trợ Lý ChatGPT theo ngách —</option>';
+    html += '<option disabled>── Ngách hệ thống ──</option>';
+    sysOnly.forEach(n => {
+      const code = n.nicheCode ? `[${n.nicheCode}] ` : '';
+      html += `<option value="${n.id}">${code}${n.name}</option>`;
+    });
+    if (pvtOnly.length > 0) {
+      html += `<option disabled>── Ngách của tôi (riêng tư) ──</option>`;
+      pvtOnly.forEach(n => {
+        const code = n.nicheCode ? `[${n.nicheCode}] ` : '';
+        html += `<option value="${n.id}">${code}${n.name}</option>`;
+      });
+    }
+    select.innerHTML = html;
+    const countEl = document.getElementById('privateNicheCount');
+    if (countEl) countEl.textContent = pvtOnly.length;
+  } catch (err) {
+    console.error('Failed to load niches:', err);
+  }
+}
+
+function getSelectedNiche() {
+  const id = document.getElementById('nicheSelect').value;
+  return niches.find(n => n.id === id) || null;
+}
+
+async function createNiche() {
+  const name = prompt('Nhập tên ngách mới:');
+  if (!name) return;
+  const systemPrompt = prompt('Nhập System Prompt cho ngách này (hướng dẫn cách viết cho AI):');
+  if (!systemPrompt) return;
+  try {
+    const nicheCode = (prompt('Nhập mã ngách (tùy chọn, bỏ trống để không có):') || '').trim() || null;
+    const niche = {
+      id: 'niche-private-' + Date.now(),
+      name: name.trim(),
+      nicheCode,
+      systemPrompt: systemPrompt.trim(),
+      ownerUserId: 'local-user',
+      unlockSource: 'private',
+    };
+    const list = loadPrivateNiches();
+    list.push(niche);
+    savePrivateNiches(list);
+    await loadNiches();
+    autochatLog('✅ Đã tạo ngách riêng (lưu trong trình duyệt): ' + name, 'success');
+  } catch (err) {
+    autochatLog('❌ ' + err.message, 'error');
+  }
+}
+
+async function deleteNiche() {
+  const niche = getSelectedNiche();
+  if (!niche || !niche.ownerUserId) return autochatLog('⚠️ Chọn ngách riêng của bạn để xoá (ngách hệ thống không xoá được)', 'warning');
+  if (!confirm(`Xoá ngách "${niche.name}"?`)) return;
+  try {
+    const list = loadPrivateNiches().filter(n => n.id !== niche.id);
+    savePrivateNiches(list);
+    await loadNiches();
+    autochatLog('🗑️ Đã xoá ngách: ' + niche.name, 'info');
+  } catch (err) {
+    autochatLog('❌ ' + err.message, 'error');
+  }
+}
+
+function buildScriptPrompt() {
+  const titles = document.getElementById('autochatTitles').value.trim();
+  const charConfig = getCharConfig();
+  const perspective = document.getElementById('narrativePerspective').value;
+  const words = document.getElementById('wordsPerPart').value;
+  const includeTA = document.getElementById('includeImagePrompts').checked;
+  
+  let prompt = AUTOCHAT_TEMPLATE;
+  
+  // Replace [MAP] with title
+  const firstTitle = titles.split('\n')[0].trim() || 'Không có tiêu đề';
+  prompt = prompt.replace('[MAP]', firstTitle);
+  
+  // Replace character config
+  prompt = prompt.replace(/2 nhân vật chính là [^.]*\./, `2 nhân vật chính là ${charConfig}.`);
+  
+  // Replace narrative perspective
+  prompt = prompt.replace(/ngôi thứ \{?1\}?/g, `ngôi thứ ${perspective}`);
+  
+  // Replace words per part
+  if (words && words !== '550') {
+    prompt = prompt.replace(/khoảng 550 từ/gi, `khoảng ${words} từ`);
+  }
+  
+  // Optionally remove TA (image prompts)
+  if (!includeTA) {
+    prompt = prompt.split('\n').filter(line => !/^\s*TA\s*\|/i.test(line)).join('\n');
+  }
+  
+  return prompt;
+}
+
+function initAutochat() {
+  const provider = document.getElementById('aiProvider').value;
+  const modelSelect = document.getElementById('aiModel');
+  const models = MODELS[provider] || MODELS.gemini;
+  modelSelect.innerHTML = models.map(m => `<option value="${m}">${m}</option>`).join('');
+  
+  const saved = localStorage.getItem('vm_apikey_' + provider);
+  if (saved) document.getElementById('apiKeyInput').value = saved;
+  
+  loadAutochatQueue();
+  updateQueueUI();
+  loadAutochatHistory();
+  loadNiches();
+}
+
+document.getElementById('aiProvider').addEventListener('change', () => {
+  const oldProvider = document.getElementById('aiProvider').value === 'openai' ? 'gemini' : 'openai';
+  const oldKey = document.getElementById('apiKeyInput').value;
+  if (oldKey) localStorage.setItem('vm_apikey_' + oldProvider, oldKey);
+  initAutochat();
+});
+
+// File upload handlers
+document.getElementById('autochatFileInput').addEventListener('change', function(e) {
+  const files = Array.from(this.files);
+  files.forEach(f => {
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      const name = f.name.replace(/\.txt$/i, '');
+      autochatQueue.push({ name, content: ev.target.result, type: 'upload' });
+      saveAutochatQueue();
+      updateQueueUI();
+    };
+    reader.readAsText(f);
+  });
+  document.getElementById('autochatUploadedFiles').textContent = `Đã thêm ${files.length} file`;
+  this.value = '';
+});
+
+document.getElementById('autochatFolderInput').addEventListener('change', function(e) {
+  const files = Array.from(this.files).filter(f => f.name.endsWith('.txt'));
+  files.forEach(f => {
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      const name = f.name.replace(/\.txt$/i, '');
+      const folder = f.webkitRelativePath.split('/')[0];
+      autochatQueue.push({ name, content: ev.target.result, type: 'upload', folder });
+      saveAutochatQueue();
+      updateQueueUI();
+    };
+    reader.readAsText(f);
+  });
+  document.getElementById('autochatUploadedFiles').textContent = `Đã thêm ${files.length} file từ thư mục`;
+  this.value = '';
+});
+
+async function testApiKey() {
+  const provider = document.getElementById('aiProvider').value;
+  const apiKey = document.getElementById('apiKeyInput').value.trim();
+  const btn = document.getElementById('testApiKeyBtn');
+  if (!apiKey) return autochatLog('⚠️ Nhập API key trước', 'warning');
+  btn.disabled = true;
+  btn.textContent = 'Đang test...';
+  autochatLog('🔄 Đang kiểm tra API key...');
+  try {
+    const res = await fetch('/api/autochat/generate', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ provider, apiKey, prompt: 'Say "OK" and nothing else.' })
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error);
+    localStorage.setItem('vm_apikey_' + provider, apiKey);
+    autochatLog('✅ API key hợp lệ!', 'success');
+  } catch (err) {
+    autochatLog('❌ ' + err.message, 'error');
+  }
+  btn.disabled = false;
+  btn.textContent = 'Test';
+}
+
+function previewScript() {
+  const prompt = buildScriptPrompt();
+  const preview = document.getElementById('previewContent');
+  preview.textContent = prompt;
+  preview.style.color = 'var(--text)';
+}
+
+// ─── "Bản dựng số" helpers ───
+function getTitleOccurrences(titles) {
+  const map = new Map();
+  return titles.map(t => {
+    const key = t.toLowerCase();
+    const count = (map.get(key) ?? 0) + 1;
+    map.set(key, count);
+    return count;
+  });
+}
+
+function appendBuildNote(prompt, part) {
+  const p = Number(part ?? 1);
+  if (!Number.isFinite(p) || p <= 1) return prompt;
+  const note = " ĐÂY LÀ BẢN DỰNG SỐ " + p + " CỦA CÙNG MỘT TIÊU ĐỀ: bắt buộc kể một câu chuyện KHÁC HOÀN TOÀN các bản dựng khác — đổi bối cảnh, nghề nghiệp và hoàn cảnh nhân vật, đổi cách mở đầu, đổi chuỗi diễn biến và đổi twist; chỉ giữ nguyên lời hứa của tiêu đề. Tuyệt đối không dùng lại mô-típ quen thuộc hay dễ đoán nhất.";
+  const lines = prompt.split("\n");
+  const voIdx = lines.findIndex(l => /^\s*VO\s*\|/i.test(l));
+  if (voIdx === -1) return prompt;
+  lines[voIdx] = lines[voIdx].trimEnd() + note;
+  return lines.join("\n");
+}
+
+function addToQueue() {
+  const titles = document.getElementById('autochatTitles').value.trim();
+  const nameBase = document.getElementById('scriptNameInput').value.trim() || 'KICHBAN';
+  
+  if (!titles) return autochatLog('⚠️ Nhập ít nhất 1 tiêu đề', 'warning');
+  
+  const titleLines = titles.split('\n').filter(t => t.trim());
+  const charConfig = getCharConfig();
+  const perspective = document.getElementById('narrativePerspective').value;
+  const words = document.getElementById('wordsPerPart').value;
+  const includeTA = document.getElementById('includeImagePrompts').checked;
+  const niche = getSelectedNiche();
+  const systemPrompt = niche ? niche.systemPrompt : '';
+  
+  // Get the initial count for auto-increment naming
+  const existingCount = autochatQueue.filter(i => i.name.startsWith(nameBase)).length;
+  
+  // Count occurrences of each title for "bản dựng số"
+  const occurrences = getTitleOccurrences(titleLines.map(t => t.trim()));
+  
+  titleLines.forEach((title, i) => {
+    const num = existingCount + i + 1;
+    const name = `${nameBase}${num}`;
+    const part = occurrences[i];
+    
+    // Build the prompt for this title
+    let prompt = AUTOCHAT_TEMPLATE;
+    prompt = prompt.replace(/\[MAP\]/g, title.trim() ? '[' + title.trim() + ']' : '[MAP]');
+    prompt = prompt.replace(/2 nhân vật chính là [^.]*\./, `2 nhân vật chính là ${charConfig}.`);
+    prompt = prompt.replace(/ngôi thứ \{?1\}?/g, `ngôi thứ ${perspective}`);
+    if (words && words !== '550') {
+      prompt = prompt.replace(/khoảng\s*550\s*từ/gi, `khoảng ${words} từ`);
+    }
+    if (!includeTA) {
+      prompt = prompt.split('\n').filter(line => !/^\s*TA\s*\|/i.test(line)).join('\n').replace(/\n{3,}/g, '\n\n').trim();
+    }
+    
+    // Append "bản dựng số" note for duplicate titles
+    prompt = appendBuildNote(prompt, part);
+    
+    autochatQueue.push({ name, content: prompt, title: title.trim(), type: 'title', systemPrompt });
+  });
+  
+  saveAutochatQueue();
+  updateQueueUI();
+  autochatLog(`✅ Đã thêm ${titleLines.length} file vào danh sách`, 'success');
+}
+
+function updateQueueUI() {
+  const list = document.getElementById('queueList');
+  const count = document.getElementById('queueCount');
+  const startBtn = document.getElementById('autochatStartBtn');
+  
+  count.textContent = autochatQueue.length;
+  
+  if (autochatQueue.length === 0) {
+    list.innerHTML = '<div class="text-xs text-dim">Chưa có file nào trong danh sách.</div>';
+    startBtn.disabled = true;
+    return;
+  }
+  
+  startBtn.disabled = autochatRunning;
+  
+  list.innerHTML = autochatQueue.map((item, idx) => `
+    <div class="file-item" style="display:flex;align-items:center;justify-content:space-between;padding:6px 8px;border-bottom:1px solid var(--border);">
+      <span style="font-size:12px;">${idx + 1}. ${item.name}${item.type === 'title' ? ' (tiêu đề)' : ''}</span>
+      <button class="btn btn-sm btn-danger" onclick="removeQueueItem(${idx})" ${autochatRunning ? 'disabled' : ''} style="padding:2px 6px;font-size:11px;">✕</button>
+    </div>
+  `).join('');
+}
+
+function removeQueueItem(idx) {
+  autochatQueue.splice(idx, 1);
+  saveAutochatQueue();
+  updateQueueUI();
+}
+
+function clearAutochatQueue() {
+  autochatQueue = [];
+  saveAutochatQueue();
+  updateQueueUI();
+  autochatLog('🗑️ Đã xoá danh sách', 'info');
+}
+
+function parseAutochatCommands(fullTemplate) {
+  const text = String(fullTemplate || '').replace(/\r\n?/g, '\n');
+  const regex = /^\s*(VO \||SE \||TA \|)/gm;
+  const markers = [];
+  let m;
+  while ((m = regex.exec(text)) !== null) {
+    const raw = m[1].trim();
+    markers.push({ index: m.index, prefix: raw.substring(0, raw.length - 1).trim() });
+  }
+
+  if (markers.length === 0) {
+    const t = text.trim();
+    return t ? [{ kind: 'single', text: t }] : [];
+  }
+
+  const blocks = [];
+  const firstMap = text.slice(0, markers[0].index).trim();
+  if (firstMap.length > 0) blocks.push({ kind: 'map', text: firstMap });
+
+  for (let i = 0; i < markers.length; i++) {
+    const start = markers[i].index;
+    const end = (i + 1 < markers.length) ? markers[i + 1].index : text.length;
+    const blockText = text.slice(start, end).trim();
+    if (!blockText) continue;
+    const prefix = markers[i].prefix.toUpperCase();
+    if (prefix === 'VO') blocks.push({ kind: 'vo', text: blockText });
+    else if (prefix === 'SE') blocks.push({ kind: 'se', text: blockText });
+    else if (prefix === 'TA') blocks.push({ kind: 'ta', text: blockText });
+    else blocks.push({ kind: 'single', text: blockText });
+  }
+  return blocks;
+}
+
+function classifyStepLabel(kind, idxInKind) {
+  if (kind === 'map') return 'MAP (sườn 9 phần)';
+  if (kind === 'vo') return `VO phần ${idxInKind}`;
+  if (kind === 'se') return 'SEO Description';
+  if (kind === 'ta') return `Tạo ảnh nhân vật ${idxInKind}`;
+  return `Bước`;
+}
+
+async function callAutochatOneTurn({ provider, apiKey, model, messages, systemPrompt }) {
+  const res = await fetch('/api/autochat/generate', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ provider, apiKey, model, messages, systemPrompt: systemPrompt || '' })
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error || ('HTTP ' + res.status));
+  return data.content || '';
+}
+
+async function runAutochatItem(item, { provider, apiKey, model }) {
+  const commands = parseAutochatCommands(item.content);
+
+  if (commands.length === 0) {
+    throw new Error('Nội dung file trống hoặc không parse được.');
+  }
+
+  const isSingleTurn = commands.length === 1 && commands[0].kind === 'single';
+
+  const progress = document.getElementById('autochatProgress');
+  const messages = [];
+  const collected = { map: null, vo: [], se: null, ta: [], single: null };
+  let voCount = 0, taCount = 0;
+
+  for (let c = 0; c < commands.length && !autochatStopped; c++) {
+    const cmd = commands[c];
+    let idxInKind = 0;
+    if (cmd.kind === 'vo') { voCount++; idxInKind = voCount; }
+    if (cmd.kind === 'ta') { taCount++; idxInKind = taCount; }
+    const label = isSingleTurn ? 'Prompt đơn lẻ' : classifyStepLabel(cmd.kind, idxInKind);
+
+    let retries = 0;
+    const maxRetries = 5;
+    let reply = null;
+    while (retries <= maxRetries && !autochatStopped) {
+      try {
+        autochatLog(`  ▶ Bước ${c + 1}/${commands.length}: ${label}...`, 'info');
+        progress.textContent = `  ⏳ Bước ${c + 1}/${commands.length}: ${label}`;
+        messages.push({ role: 'user', content: cmd.text });
+        reply = await callAutochatOneTurn({ provider, apiKey, model, messages, systemPrompt: item.systemPrompt || '' });
+        if (reply && typeof reply === 'string') reply = reply.trim();
+        if (!reply) throw new Error('AI trả về nội dung rỗng');
+        messages.push({ role: 'assistant', content: reply });
+        break;
+      } catch (err) {
+        // rollback failed user push on final failure
+        if (messages[messages.length - 1]?.role === 'user') messages.pop();
+        retries++;
+        if (retries <= maxRetries && !autochatStopped) {
+          const waitTime = Math.min(retries * 2500, 15000);
+          autochatLog(`    ⚠️ Lỗi (lần ${retries}/${maxRetries}): ${err.message} — chờ ${(waitTime/1000).toFixed(0)}s...`, 'warning');
+          progress.textContent = `    ⏳ Chờ thử lại bước ${c + 1} (lần ${retries})...`;
+          await new Promise(r => setTimeout(r, waitTime));
+        } else {
+          throw err;
+        }
+      }
+    }
+
+    if (autochatStopped) return { stopped: true };
+    if (reply === null) throw new Error('Không lấy được nội dung sau khi thử lại');
+
+    if (cmd.kind === 'map') collected.map = reply;
+    else if (cmd.kind === 'vo') collected.vo.push(reply);
+    else if (cmd.kind === 'se') collected.se = reply;
+    else if (cmd.kind === 'ta') collected.ta.push(reply);
+    else if (cmd.kind === 'single') collected.single = reply;
+
+    autochatLog(`    ✅ ${label} — ${reply.length.toLocaleString()} ký tự`, 'success');
+  }
+
+  const timestamp = new Date().toISOString().slice(0, 10);
+  const downloads = [];
+
+  if (isSingleTurn) {
+    const raw = collected.single || '';
+    const singleFileName = `${item.name}-${timestamp}.txt`;
+    downloadFile(raw, singleFileName, 'text/plain');
+    downloads.push({ name: singleFileName, size: raw.length });
+  } else {
+    const voParts = collected.vo.filter(Boolean);
+    if (voParts.length > 0) {
+      const voContent = voParts.join('\n\n').trim();
+      const voFileName = `${item.name}.txt`;
+      downloadFile(voContent, voFileName, 'text/plain');
+      downloads.push({ name: voFileName, size: voContent.length });
+    } else if (collected.map && collected.se === null && collected.ta.length === 0) {
+      const fallback = collected.map;
+      const voFileName = `${item.name}.txt`;
+      downloadFile(fallback, voFileName, 'text/plain');
+      downloads.push({ name: voFileName, size: fallback.length });
+    }
+
+    if (collected.se || collected.ta.length > 0) {
+      const sePart = collected.se ? `SE:\n\n${collected.se}` : '';
+      let taPart = '';
+      collected.ta.forEach((taText, i) => {
+        if (!taText) return;
+        if (taPart) taPart += '\n\n';
+        taPart += `TA:\n\n${taText}`;
+      });
+      const motaPieces = [];
+      if (sePart) motaPieces.push(sePart);
+      if (taPart) motaPieces.push(taPart);
+      const mota = `Mô tả & tạo ảnh cho: ${item.title || item.name}\n\n` + motaPieces.join('\n\n');
+
+      if (collected.ta.length >= 1) {
+        const bl2Mota = `Mô tả & tạo ảnh BL2 cho: ${item.title || item.name}\n\nSE:\n\n${collected.se || ''}\n\nTA:\n\n${collected.ta[0] || ''}`;
+        const bl2Name = `mota-taoanh-${item.name}-bl2.txt`;
+        downloadFile(bl2Mota, bl2Name, 'text/plain');
+        downloads.push({ name: bl2Name, size: bl2Mota.length });
+      }
+      if (collected.ta.length >= 2) {
+        const bl3Mota = `Mô tả & tạo ảnh BL3 cho: ${item.title || item.name}\n\nSE:\n\n${collected.se || ''}\n\nTA:\n\n${collected.ta[1] || ''}`;
+        const bl3Name = `mota-taoanh-${item.name}-bl3.txt`;
+        downloadFile(bl3Mota, bl3Name, 'text/plain');
+        downloads.push({ name: bl3Name, size: bl3Mota.length });
+      }
+
+      if (downloads.filter(d => d.name.startsWith('mota-')).length === 0) {
+        const descFileName = `mota-taoanh-${item.name}.txt`;
+        downloadFile(mota, descFileName, 'text/plain');
+        downloads.push({ name: descFileName, size: mota.length });
+      }
+    }
+  }
+
+  return { stopped: false, downloads };
+}
+
+async function startAutochatRun() {
+  const provider = document.getElementById('aiProvider').value;
+  const apiKey = document.getElementById('apiKeyInput').value.trim();
+  const model = document.getElementById('aiModel').value;
+
+  if (!apiKey) return autochatLog('⚠️ Nhập API key trước', 'warning');
+  if (autochatQueue.length === 0) return autochatLog('⚠️ Danh sách rỗng', 'warning');
+
+  autochatRunning = true;
+  autochatStopped = false;
+  document.getElementById('autochatStartBtn').disabled = true;
+  document.getElementById('autochatStopBtn').disabled = false;
+  updateQueueUI();
+
+  autochatLog(`🔄 Bắt đầu chạy ${autochatQueue.length} file (giống bản gốc: tuần tự multi-turn giữ context)...`);
+
+  const progress = document.getElementById('autochatProgress');
+  const history = [];
+  let okCount = 0, failCount = 0;
+
+  for (let i = 0; i < autochatQueue.length && !autochatStopped; i++) {
+    const item = autochatQueue[i];
+    autochatLog(`\n📄 [${i + 1}/${autochatQueue.length}] === ${item.name} ===`, 'info');
+    progress.textContent = `📄 [${i + 1}/${autochatQueue.length}] Đang xử lý: ${item.name}...`;
+
+    try {
+      const commands = parseAutochatCommands(item.content);
+      autochatLog(`   🧩 Đã tách thành ${commands.length} bước (MAP → 9 VO → SE → 2 TA)`, 'info');
+      const res = await runAutochatItem(item, { provider, apiKey, model });
+      if (res.stopped) break;
+      const fileList = (res.downloads || []).map(d => `${d.name} (${(d.size/1024).toFixed(1)}KB)`).join(' | ');
+      autochatLog(`✅ [${i + 1}/${autochatQueue.length}] ${item.name} — tải: ${fileList || 'OK'}`, 'success');
+      progress.textContent = `✅ [${i + 1}/${autochatQueue.length}] ${item.name} — thành công`;
+      history.push({
+        name: item.name,
+        title: item.title || '',
+        timestamp: Date.now(),
+        files: (res.downloads || []).map(d => d.name),
+        charConfig: getCharConfig(),
+        perspective: document.getElementById('narrativePerspective').value
+      });
+      okCount++;
+    } catch (err) {
+      failCount++;
+      autochatLog(`❌ [${i + 1}/${autochatQueue.length}] ${item.name}: ${err.message}`, 'error');
+      progress.textContent = `❌ [${i + 1}/${autochatQueue.length}] ${item.name} — lỗi`;
+    }
+  }
+
+  saveAutochatHistory(history);
+
+  autochatRunning = false;
+  document.getElementById('autochatStartBtn').disabled = false;
+  document.getElementById('autochatStopBtn').disabled = true;
+
+  if (autochatStopped) {
+    autochatLog('⏹ Đã dừng theo yêu cầu', 'info');
+    progress.textContent = '⏹ Đã dừng';
+  } else {
+    autochatLog(`✅ Hoàn thành: OK ${okCount} | Lỗi ${failCount} / ${autochatQueue.length}`, 'success');
+    progress.textContent = `✅ Hoàn thành! OK ${okCount} · Lỗi ${failCount}`;
+    autochatQueue = [];
+    saveAutochatQueue();
+    updateQueueUI();
+  }
+}
+
+function stopAutochatRun() {
+  autochatStopped = true;
+  autochatLog('⏹ Đang dừng...', 'info');
+  document.getElementById('autochatStopBtn').disabled = true;
+}
+
+function downloadFile(content, filename, mimeType = 'text/plain') {
+  const blob = new Blob([content], { type: mimeType });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
+function saveAutochatQueue() {
+  localStorage.setItem('vm_autochat_queue', JSON.stringify(autochatQueue));
+}
+
+function loadAutochatQueue() {
+  try {
+    const data = localStorage.getItem('vm_autochat_queue');
+    autochatQueue = data ? JSON.parse(data) : [];
+  } catch { autochatQueue = []; }
+}
+
+function saveAutochatHistory(newItems) {
+  try {
+    const existing = JSON.parse(localStorage.getItem('vm_autochat_history') || '[]');
+    const all = [...newItems, ...existing];
+    // Keep only last 2 days
+    const twoDaysAgo = Date.now() - 2 * 24 * 60 * 60 * 1000;
+    const filtered = all.filter(h => h.timestamp > twoDaysAgo).slice(0, 100);
+    localStorage.setItem('vm_autochat_history', JSON.stringify(filtered));
+    loadAutochatHistory();
+  } catch {}
+}
+
+function loadAutochatHistory() {
+  try {
+    const data = JSON.parse(localStorage.getItem('vm_autochat_history') || '[]');
+    const list = document.getElementById('autochatHistoryList');
+    if (data.length === 0) {
+      list.innerHTML = '<div class="text-dim">Chưa có lịch sử.</div>';
+      return;
+    }
+    list.innerHTML = data.map(h => {
+      const date = new Date(h.timestamp).toLocaleString('vi-VN');
+      return `<div style="padding:4px 0;border-bottom:1px solid var(--border);">${date} — <strong>${h.name}</strong>${h.title ? ': ' + h.title.substring(0, 30) : ''}</div>`;
+    }).join('');
+  } catch {}
+}
+
+function autochatLog(msg, type = 'info') {
+  const el = document.getElementById('autochatProgress');
+  if (!el) return;
+  const colors = { info: 'var(--text-dim)', success: '#5fdb7a', error: '#ff6b6b', warning: '#fbbf24' };
+  el.style.color = colors[type] || colors.info;
+  el.textContent = msg;
+}
+function saveScript() {
+  const title = document.getElementById('scriptTitle').value.trim() || 'Untitled';
+  const content = document.getElementById('scriptContent').value.trim();
+  if (!content) return alert('Chưa có nội dung kịch bản');
+  
+  const existing = state.scripts.findIndex(s => s.title === title);
+  if (existing >= 0) {
+    state.scripts[existing] = { title, content, updated: Date.now() };
+  } else {
+    state.scripts.push({ title, content, updated: Date.now() });
+  }
+  localStorage.setItem('vm_scripts', JSON.stringify(state.scripts));
+  refreshScripts();
+  refreshAutoScripts();
+  alert('Đã lưu!');
+}
+
+function loadScript() {
+  if (!state.scripts.length) return alert('Chưa có kịch bản nào');
+  
+  const choices = state.scripts.map((s, i) => `${i+1}. ${s.title}`).join('\n');
+  const idx = prompt(`Chọn kịch bản:\n${choices}\n\nNhập số thứ tự:`);
+  if (!idx) return;
+  
+  const i = parseInt(idx) - 1;
+  if (i >= 0 && i < state.scripts.length) {
+    document.getElementById('scriptTitle').value = state.scripts[i].title;
+    document.getElementById('scriptContent').value = state.scripts[i].content;
+  }
+}
+
+function refreshScripts() {
+  // Just update the list display
+}
+
+function refreshAutoScripts() {
+  const select = document.getElementById('autoScriptSelect');
+  select.innerHTML = state.scripts.map(s => 
+    `<option value="${s.title}">${s.title} (${new Date(s.updated).toLocaleDateString()})</option>`
+  ).join('');
+  if (state.scripts.length === 0) {
+    select.innerHTML = '<option value="">— Chưa có kịch bản nào —</option>';
+  }
+}
+
+function addScriptPrompt() {
+  const prompts = [
+    'Viết 1 kịch bản video YouTube về chủ đề... (thay bằng chủ đề của bạn)',
+    'Kể 1 câu chuyện ngắn về...',
+    'Hướng dẫn cách làm...',
+  ];
+  const current = document.getElementById('scriptContent').value;
+  document.getElementById('scriptContent').value = current + (current ? '\n\n' : '') + prompts[Math.floor(Math.random() * prompts.length)];
+}
+
+function sendToVoiceMax() {
+  const content = document.getElementById('scriptContent').value.trim();
+  if (!content) return alert('Chưa có nội dung kịch bản');
+  
+  const title = document.getElementById('scriptTitle').value.trim() || 'autochat-script';
+  const id = Math.random().toString(36).slice(2, 10);
+  
+  // Add to VoiceMax files
+  state.files.push({
+    id,
+    name: title,
+    text: content,
+    relPath: title + '.txt',
+  });
+  renderFileList();
+  
+  // Switch to VoiceMax tab
+  document.querySelector('[data-tab="voicemax"]').click();
+  addLog(`📤 Đã nhận kịch bản "${title}" từ AutoChat (${content.length} ký tự)`);
+}
+
+function runAutoPipeline() {
+  const select = document.getElementById('autoScriptSelect');
+  const title = select.value;
+  if (!title) return alert('Chọn kịch bản trước');
+  
+  const script = state.scripts.find(s => s.title === title);
+  if (!script) return alert('Không tìm thấy kịch bản');
+  
+  // Add to VoiceMax and start
+  const id = Math.random().toString(36).slice(2, 10);
+  state.files.push({
+    id,
+    name: script.title,
+    text: script.content,
+    relPath: script.title + '.txt',
+  });
+  renderFileList();
+  
+  document.querySelector('[data-tab="voicemax"]').click();
+  addLog(`⚡ Dây chuyền: đã nhận kịch bản "${script.title}" — bắt đầu lồng tiếng`);
+  
+  setTimeout(() => startConversion(), 500);
+}
+
+// ==================== INIT ====================
+updateRate();
+updatePitch();
+loadVoices();
+refreshAutoScripts();
+initAutochat();
+
+console.log('🎤 VoiceMax Clone sẵn sàng!');
+console.log('📂 Dùng Ctrl+Shift+I để mở DevTools');
+</script>
+</body>
+</html>
