@@ -7,3 +7,5 @@ node_modules/
 tts_helper.py
 __pycache__/
 *.pyc
+
+.vercel
