@@ -16,6 +16,32 @@ export default async function handler(req, res) {
   if (!voice) return res.status(400).json({ error: 'Voice is required' });
   if (text.length > 2500) return res.status(413).json({ error: 'Text quá dài (>2500 ký tự).' });
 
+  // Timeout: Vercel Hobby kills at 10s, respond before that
+  const timeout = setTimeout(() => {
+    if (!res.writableEnded) {
+      res.status(504).json({ error: 'Request timeout (>9s). Vui lòng thử lại.', trace: '' });
+    }
+  }, 9000);
+
+  try {
+    const result = await _synthesize(text, voice, rate, pitch);
+    clearTimeout(timeout);
+    if (!res.writableEnded) {
+      const b64 = result.audio.toString('base64');
+      return res.status(200).json({ audio: b64, words: result.words });
+    }
+  } catch (err) {
+    clearTimeout(timeout);
+    if (!res.writableEnded) {
+      return res.status(500).json({
+        error: err.message || 'Internal server error',
+        trace: (err.stack || '').slice(0, 2000),
+      });
+    }
+  }
+}
+
+async function _synthesize(text, voice, rate, pitch) {
   for (let attempt = 0; attempt < 3; attempt++) {
     const tmpFile = path.join(os.tmpdir(), `tts_${Date.now()}_${attempt}.mp3`);
     const subFile = tmpFile + '.json';
@@ -27,7 +53,7 @@ export default async function handler(req, res) {
         volume: '+0%',
         lang: voice.startsWith('vi') ? 'vi-VN' : voice.slice(0, 5),
         saveSubtitles: true,
-        timeout: 30000,
+        timeout: 8000,
       });
       await tts.ttsPromise(text, tmpFile);
       const audioBuffer = fs.readFileSync(tmpFile);
@@ -36,25 +62,20 @@ export default async function handler(req, res) {
           await new Promise(r => setTimeout(r, 1000 * (attempt + 1)));
           continue;
         }
-        return res.status(500).json({ error: 'Không tạo được âm thanh (buffer quá nhỏ).' });
+        throw new Error('Không tạo được âm thanh (buffer quá nhỏ).');
       }
       let words = [];
       try {
         const subData = fs.readFileSync(subFile, 'utf-8');
         words = JSON.parse(subData);
       } catch { /* subtitles file may not exist */ }
-
-      const b64 = audioBuffer.toString('base64');
-      return res.status(200).json({ audio: b64, words });
+      return { audio: audioBuffer, words };
     } catch (err) {
-      if (attempt < 2) {
+      if (attempt < 2 && err.message?.includes('No audio')) {
         await new Promise(r => setTimeout(r, 1000 * (attempt + 1)));
         continue;
       }
-      return res.status(500).json({
-        error: err.message || 'Internal server error',
-        trace: (err.stack || '').slice(0, 2000),
-      });
+      throw err;
     } finally {
       try { fs.unlinkSync(tmpFile); } catch { /* ignore */ }
       try { fs.unlinkSync(subFile); } catch { /* ignore */ }
