@@ -27,8 +27,9 @@ export default async function handler(req, res) {
     const result = await _synthesize(text, voice, rate, pitch);
     clearTimeout(timeout);
     if (!res.writableEnded) {
-      const b64 = result.toString('base64');
-      return res.status(200).json({ audio: b64 });
+      res.setHeader('Content-Type', 'audio/mpeg');
+      res.setHeader('Content-Length', result.length);
+      return res.status(200).send(result);
     }
   } catch (err) {
     clearTimeout(timeout);
