@@ -21,17 +21,15 @@ def _synthesize_sync(text, voice, rate, pitch):
             if chunk.get("type") == "audio":
                 audio_bytes.extend(chunk["data"])
         return bytes(audio_bytes)
+
+    # Vercel Python runtime may have a running event loop.
+    # Always create a fresh loop to avoid asyncio.run() conflicts.
+    loop = asyncio.new_event_loop()
+    asyncio.set_event_loop(loop)
     try:
-        loop = asyncio.get_running_loop()
-    except RuntimeError:
-        pass
-    else:
-        if loop.is_running():
-            # Vercel has a running loop - create a fresh one
-            loop = asyncio.new_event_loop()
-            asyncio.set_event_loop(loop)
-            return loop.run_until_complete(_run())
-    return asyncio.run(_run())
+        return loop.run_until_complete(_run())
+    finally:
+        loop.close()
 
 
 def app(environ, start_response):

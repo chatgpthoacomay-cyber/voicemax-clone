@@ -28,16 +28,11 @@ def _synthesize_sync(text, voice, rate, pitch):
                 })
         return bytes(audio_bytes), words
     try:
-        loop = asyncio.get_running_loop()
-    except RuntimeError:
-        pass
-    else:
-        if loop.is_running():
-            # Vercel has a running loop - create a fresh one
-            loop = asyncio.new_event_loop()
-            asyncio.set_event_loop(loop)
-            return loop.run_until_complete(_run())
-    return asyncio.run(_run())
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
+        return loop.run_until_complete(_run())
+    finally:
+        loop.close()
 
 
 def app(environ, start_response):
