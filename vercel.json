@@ -4,15 +4,14 @@
   "framework": null,
   "buildCommand": null,
   "outputDirectory": "public",
-  "installCommand": "npm install && pip3 install -r requirements.txt",
+  "installCommand": "npm install",
   "builds": [
-    { "src": "api/**/*.py", "use": "@vercel/python" },
     { "src": "api/**/*.js", "use": "@vercel/node" },
     { "src": "public/**/*", "use": "@vercel/static" }
   ],
   "routes": [
-    { "src": "/api/tts", "dest": "/api/tts.py" },
-    { "src": "/api/tts-with-timing", "dest": "/api/tts-with-timing.py" },
+    { "src": "/api/tts-with-timing", "dest": "/api/tts-with-timing.js" },
+    { "src": "/api/tts", "dest": "/api/tts.js" },
     { "src": "/api/voices", "dest": "/api/voices.js" },
     { "src": "/api/autochat/(.*)", "dest": "/api/autochat/$1" },
     { "handle": "filesystem" },
