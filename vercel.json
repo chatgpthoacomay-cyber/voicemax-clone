@@ -13,6 +13,8 @@
     { "src": "/api/tts-with-timing", "dest": "/api/tts-with-timing.js" },
     { "src": "/api/tts", "dest": "/api/tts.js" },
     { "src": "/api/voices", "dest": "/api/voices.js" },
+    { "src": "/api/autochat/niches", "dest": "/api/autochat/niches.js" },
+    { "src": "/api/autochat/generate", "dest": "/api/autochat/generate.js" },
     { "handle": "filesystem" },
     { "src": "/(.*)", "dest": "/public/$1" }
   ],
