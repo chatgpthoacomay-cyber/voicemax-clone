@@ -10,6 +10,14 @@
     { "src": "api/**/*.js", "use": "@vercel/node" },
     { "src": "public/**/*", "use": "@vercel/static" }
   ],
+  "routes": [
+    { "src": "/api/tts", "dest": "/api/tts.py" },
+    { "src": "/api/tts-with-timing", "dest": "/api/tts-with-timing.py" },
+    { "src": "/api/voices", "dest": "/api/voices.js" },
+    { "src": "/api/autochat/(.*)", "dest": "/api/autochat/$1" },
+    { "handle": "filesystem" },
+    { "src": "/(.*)", "dest": "/public/$1" }
+  ],
   "headers": [
     {
       "source": "/api/(.*)",
@@ -19,8 +27,5 @@
         { "key": "Access-Control-Allow-Headers", "value": "Content-Type,Authorization" }
       ]
     }
-  ],
-  "rewrites": [
-    { "source": "/api/autochat/niches/:id", "destination": "/api/autochat/niches.js" }
   ]
 }
