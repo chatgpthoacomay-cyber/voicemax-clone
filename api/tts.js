@@ -58,7 +58,7 @@ export default async function handler(req, res) {
 
   try {
     const audioBuffer = await new Promise((resolve, reject) => {
-      const child = spawn('python3', ['-c', PYTHON_SCRIPT], {
+      const child = spawn('python', ['-c', PYTHON_SCRIPT], {
         stdio: ['pipe', 'pipe', 'pipe'],
         maxBuffer: 100 * 1024 * 1024,
         env: { ...process.env, PYTHONIOENCODING: 'utf-8', PYTHONUTF8: '1' },
